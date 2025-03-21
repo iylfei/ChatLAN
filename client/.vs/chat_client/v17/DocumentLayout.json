@@ -3,12 +3,12 @@
   "WorkspaceRootPath": "E:\\desktop\\works\\shixun\\client\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{5F14EF28-E5F1-4A45-B438-AB699908841C}|chat_client.vcxproj|E:\\desktop\\works\\shixun\\client\\chat_client.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{5F14EF28-E5F1-4A45-B438-AB699908841C}|chat_client.vcxproj|solutionrelative:chat_client.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{5F14EF28-E5F1-4A45-B438-AB699908841C}|chat_client.vcxproj|E:\\desktop\\works\\shixun\\client\\chat_Main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{5F14EF28-E5F1-4A45-B438-AB699908841C}|chat_client.vcxproj|solutionrelative:chat_Main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{5F14EF28-E5F1-4A45-B438-AB699908841C}|chat_client.vcxproj|E:\\desktop\\works\\shixun\\client\\chat_client.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{5F14EF28-E5F1-4A45-B438-AB699908841C}|chat_client.vcxproj|solutionrelative:chat_client.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{5F14EF28-E5F1-4A45-B438-AB699908841C}|chat_client.vcxproj|E:\\desktop\\works\\shixun\\client\\chat_client.hpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
@@ -22,7 +22,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
@@ -30,13 +30,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "chat_client.cpp",
               "DocumentMoniker": "E:\\desktop\\works\\shixun\\client\\chat_client.cpp",
               "RelativeDocumentMoniker": "chat_client.cpp",
               "ToolTip": "E:\\desktop\\works\\shixun\\client\\chat_client.cpp",
               "RelativeToolTip": "chat_client.cpp",
-              "ViewState": "AgIAADYAAAAAAAAAAAAAAEMAAAAkAAAAAAAAAA==",
+              "ViewState": "AgIAACoAAAAAAAAAAAAAAEUAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2025-03-20T12:09:43.729Z",
               "EditorCaption": ""
@@ -56,13 +56,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
               "Title": "chat_Main.cpp",
               "DocumentMoniker": "E:\\desktop\\works\\shixun\\client\\chat_Main.cpp",
               "RelativeDocumentMoniker": "chat_Main.cpp",
               "ToolTip": "E:\\desktop\\works\\shixun\\client\\chat_Main.cpp",
               "RelativeToolTip": "chat_Main.cpp",
-              "ViewState": "AgIAACMAAAAAAAAAAAAcwDEAAAAeAAAAAAAAAA==",
+              "ViewState": "AgIAACMAAAAAAAAAAAAcwCoAAAAkAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2025-03-19T01:03:16.514Z",
               "EditorCaption": ""

@@ -43,7 +43,7 @@ int main()
         cerr << "客户端程序启动失败" << endl;
         return 1;
     }
-    cout << "已连接到聊天服务器！输入消息开始聊天，输入 'exit' 退出。" << endl;
+    cout << "已连接到聊天服务器,输入消息开始聊天，输入 exit 退出" << endl;
 
     string message;
     while (isrunning) {
