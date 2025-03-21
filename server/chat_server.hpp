@@ -11,6 +11,8 @@
 #include <mswsock.h>    // Microsoft-specific扩展
 #pragma comment(lib, "ws2_32.lib")  // 链接WinSock库
 
+static const size_t MAX_MESSAGE_SIZE = 4096;
+
 using namespace std;
 
 class TcpChatServer
@@ -28,12 +30,12 @@ public:
         serverSocket = CreateSocket();
         if (serverSocket == INVALID_SOCKET) return false;
 
-        if (!BindSocket(serverSocket, serverPort)) {
+        if (!BindSocket()) {
             closesocket(serverSocket);
             return false;
         }
 
-        if (!StartListen(serverSocket)) {
+        if (!StartListen()) {
             closesocket(serverSocket);
             return false;
         }
@@ -85,8 +87,8 @@ private:
 	bool InitNetwork();          // 初始化
 	SOCKET CreateSocket();          // 创建基础TCP套接字
     void ConfigSocketAddress(sockaddr_in& addr, int port);//配置地址
-	bool BindSocket(SOCKET sock, int port);  // 绑定端口
-	bool StartListen(SOCKET sock);		//监听
+	bool BindSocket();  // 绑定端口
+	bool StartListen();		//监听
 	void AcceptClients();		//接收
     void HandleClient(SOCKET clientSocket);
     void RecvMessage(SOCKET clientSocket);

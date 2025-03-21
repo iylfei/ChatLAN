@@ -29,11 +29,11 @@ void TcpChatServer::ConfigSocketAddress(sockaddr_in& addr, int port) {
 }
 
 // °ó¶¨¶Ë¿Ú
-bool TcpChatServer::BindSocket(SOCKET sock, int port) {
+bool TcpChatServer::BindSocket() {
     sockaddr_in server_addr{};
-    ConfigSocketAddress(server_addr, port);
+    ConfigSocketAddress(server_addr, serverPort);
 
-    if (bind(sock, (sockaddr*)&server_addr, sizeof(server_addr)) == SOCKET_ERROR) {
+    if (bind(serverSocket, (sockaddr*)&server_addr, sizeof(server_addr)) == SOCKET_ERROR) {
         cerr << "°ó¶¨Ê§°Ü" << WSAGetLastError() << endl;
         return false;
     }
@@ -42,9 +42,9 @@ bool TcpChatServer::BindSocket(SOCKET sock, int port) {
 
 
 //¿ªÊ¼¼àÌý
-bool TcpChatServer::StartListen(SOCKET sock)
+bool TcpChatServer::StartListen()
 {
-    if (listen(sock, SOMAXCONN) == SOCKET_ERROR) {
+    if (listen(serverSocket, SOMAXCONN) == SOCKET_ERROR) {
         cerr << "¼àÌýÊ§°Ü" << WSAGetLastError() << endl;
         return false;
     }

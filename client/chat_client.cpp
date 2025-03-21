@@ -19,24 +19,59 @@ SOCKET TcpChatClient::CreateSocket()
     return sock;
 }
 
-bool TcpChatClient::Connect(SOCKET sock, string serverIP,int port)
+bool TcpChatClient::Connect()
 {
     if (isConnected) return true;
     struct sockaddr_in addr;
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(port);
+    addr.sin_port = htons(serverPort);
     
     if (inet_pton(AF_INET, serverIP.c_str(), &addr.sin_addr) <= 0) {
         std::cerr << "无效的IP地址" << std::endl;
         return false;
     }
 
-    if (connect(sock, (struct sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR) {
+    if (connect(serverSocket, (struct sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR) {
         cerr << "连接服务器失败" << WSAGetLastError() << endl;
         return false;
     }
     isConnected = true;
-    cout << "成功连接到服务器" << "IP:" << serverIP << "Port:" << port << endl;
+    cout << "成功连接到服务器" << "IP:" << serverIP << "Port:" << serverPort << endl;
     return true;
+}
+
+bool TcpChatClient::SendMessage(const string& message)
+{
+    string fullMessage = username + ": " + message;
+    if (send(serverSocket, fullMessage.c_str(), fullMessage.size(), 0) == SOCKET_ERROR) {
+        cerr << "发送消息失败" << WSAGetLastError() << endl;
+        return false;
+    }
+    return true;
+}
+
+void TcpChatClient::RecvMessage()
+{
+    char buff[4096];
+    while (isConnected) {
+        memset(buff, 0, sizeof(buff));
+        int receivedBytes = recv(serverSocket, buff, sizeof(buff) - 1, 0);
+        if (receivedBytes > 0) {
+            if (receivedBytes > MAX_MESSAGE_SIZE) {
+                cerr << "接收消息长度超过上限" << endl;
+                continue;
+            }
+            cout << buff << endl;
+        }
+        else if (receivedBytes == 0) {
+            cout << "服务器关闭了连接" << endl;
+            break;
+        }
+        else {
+            cerr << "消息接受错误" << WSAGetLastError() << endl;
+            break;
+        }
+    }
+    isConnected = false;
 }
