@@ -1,0 +1,5 @@
+﻿  chatMain.cpp
+  tcp.cpp
+  正在生成代码...
+E:\desktop\works\计算机系统能力实训\chat_server\tcp.cpp(131,57): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
+  chat.vcxproj -> E:\desktop\works\计算机系统能力实训\chat_server\x64\Debug\chat_server.exe
