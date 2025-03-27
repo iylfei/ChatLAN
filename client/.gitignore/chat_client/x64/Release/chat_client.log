@@ -1,0 +1,8 @@
+﻿  chat_client.cpp
+E:\desktop\works\shixun\client\chat_client.cpp(47,65): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
+  chat_Main.cpp
+  正在生成代码
+  Previous IPDB not found, fall back to full compilation.
+  All 190 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  已完成代码的生成
+  chat_client.vcxproj -> E:\desktop\works\shixun\client\x64\Release\chat_client.exe

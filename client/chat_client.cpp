@@ -45,7 +45,10 @@ bool TcpChatClient::SendMessage(const string& message)
 {
     string fullMessage = username + ": " + message;
     if (send(serverSocket, fullMessage.c_str(), fullMessage.size(), 0) == SOCKET_ERROR) {
-        cerr << "发送消息失败" << WSAGetLastError() << endl;
+        if (WSAGetLastError() != 10054) {
+            cerr << "发送消息失败" << WSAGetLastError() << endl;
+        }
+        isConnected = false;
         return false;
     }
     return true;
@@ -57,6 +60,7 @@ void TcpChatClient::RecvMessage()
     while (isConnected) {
         memset(buff, 0, sizeof(buff));
         int receivedBytes = recv(serverSocket, buff, sizeof(buff) - 1, 0);
+        if (!isConnected)break;
         if (receivedBytes > 0) {
             if (receivedBytes > MAX_MESSAGE_SIZE) {
                 cerr << "接收消息长度超过上限" << endl;
@@ -64,12 +68,16 @@ void TcpChatClient::RecvMessage()
             }
             cout << buff << endl;
         }
-        else if (receivedBytes == 0) {
-            cout << "服务器关闭了连接" << endl;
-            break;
-        }
         else {
-            cerr << "消息接受错误" << WSAGetLastError() << endl;
+            if (receivedBytes == 0) {
+                cout << "服务器关闭了连接" << endl;
+            }
+            else if (WSAGetLastError() == 10054) {
+                cout << "服务器已关闭" << endl;
+            }
+            else  {
+                cerr << "消息接受错误" << WSAGetLastError() << endl;
+            }
             break;
         }
     }

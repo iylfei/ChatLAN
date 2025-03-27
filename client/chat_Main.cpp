@@ -1,6 +1,6 @@
 ﻿#include "chat_client.hpp"
 
-std::atomic<bool> isrunning(true);
+atomic<bool> isrunning(true);
 
 void signalHandler(int signal) {
     cout << "接收到退出信号，正在关闭客户端..." << endl;
@@ -22,9 +22,9 @@ int main()
         serverIP = "127.0.0.1";
     }
 
-    std::cout << "请输入服务器端口 (默认 8888): ";
-    std::string portStr;
-    std::getline(cin, portStr);
+    cout << "请输入服务器端口 (默认 8888): ";
+    string portStr;
+    getline(cin, portStr);
     if (portStr.empty()) {
         serverPort = 8888;
     }

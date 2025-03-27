@@ -43,17 +43,31 @@ public:
         isRunning = true;
 
         // 创建接受连接的线程
-        thread acceptThread(&TcpChatServer::AcceptClients, this);
-        acceptThread.detach(); // 分离线程，让它在后台运行
+        acceptThread = thread(&TcpChatServer::AcceptClients, this);
 
         return true;
     }
 
     void stop() {
+        static bool isstopped = false;
+        if (isstopped)return;
+        isstopped = true;
+        cout << "正在停止服务器..." << endl;
         isRunning = false;
 
-        // 关闭所有客户端socket
+        if (serverSocket != INVALID_SOCKET) {
+            cout << "关闭服务器socket..." << endl;
+            closesocket(serverSocket);
+            serverSocket = INVALID_SOCKET;
+        }
+
+        cout << "等待accept线程退出..." << endl;
+        if (acceptThread.joinable()) {
+            acceptThread.detach();
+        }
+
         {
+            cout << "关闭所有客户端连接..." << endl;
             lock_guard<mutex> lock(clientsMutex);
             for (auto& sock : clientSockets) {
                 closesocket(sock);
@@ -61,18 +75,15 @@ public:
             clientSockets.clear();
         }
 
-        // 关闭服务器socket
-        if (serverSocket != INVALID_SOCKET) {
-            closesocket(serverSocket);
-            serverSocket = INVALID_SOCKET;
-        }
-
-        // 等待所有线程完成
+        cout << "等待客户端线程退出..." << endl;
         for (auto& t : clientThreads) {
-            if (t.joinable()) t.join();
+            if (t.joinable()) {
+                t.detach();
+            }
         }
         clientThreads.clear();
 
+        cout << "清理Winsock资源..." << endl;
         WSACleanup();
     }
 
@@ -80,6 +91,7 @@ private:
 	int serverPort;
 	SOCKET serverSocket;
 	atomic<bool> isRunning;
+    thread acceptThread;
 	vector<thread> clientThreads;
 	vector<SOCKET> clientSockets;
 	mutex clientsMutex; 

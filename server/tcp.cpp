@@ -102,11 +102,12 @@ void TcpChatServer::RecvMessage(SOCKET clientSocket)
         //清空缓冲区
         memset(buff, 0, sizeof(buff));
         int receivedBytes = recv(clientSocket, buff, sizeof(buff) - 1, 0);//留一字节给结束符
+        if (!isRunning)break;
         if (receivedBytes <= 0) {
             if (receivedBytes == 0) {
-                cout << "客户端断开连接" << WSAGetLastError() << endl;
+                cout << "客户端断开连接"  << endl;
             } 
-            else {
+            else if(WSAGetLastError() != 10053 && WSAGetLastError() != 10054){
                 cerr << "接收消息失败: " << WSAGetLastError() << endl;
             }
 

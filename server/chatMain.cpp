@@ -10,10 +10,14 @@ int main()
     }
 
     cout << "服务器已启动，输入stop停止..." << endl;
+    atomic<bool> isRunning = true;
     string cmd;
-    while (true) {
-        getline(cin, cmd);
-        if (cmd == "stop") break;
+    while (isRunning) {
+        getline(cin,cmd);
+        if (cmd == "stop") {
+            isRunning = false;
+            break;
+        }
     }
 
     server.stop();
