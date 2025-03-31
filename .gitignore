@@ -1,0 +1,19 @@
+# Visual Studio 临时文件
+.vs/
+ipch/
+*.ipch
+*.sdf
+*.opensdf
+*.VC.db
+*.VC.opendb
+
+# C++ 编译生成的文件
+Debug/
+Release/
+x64/
+x86/
+[Bb]in/
+[Oo]bj/
+*.obj
+*.exe
+*.pdb
