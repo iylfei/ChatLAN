@@ -7,7 +7,7 @@ ipch/
 *.VC.db
 *.VC.opendb
 
-# C++ 编译生成的文件
+# C++ 编译生成的文件/文件夹
 Debug/
 Release/
 x64/
