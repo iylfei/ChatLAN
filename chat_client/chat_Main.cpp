@@ -18,6 +18,10 @@ int main()
 	if (username.empty()) {
 		username = "默认名称";
 	}
+	else if (username.size() > 15) {
+		cout << "用户名过长，请重新输入" << endl;
+        getline(cin, username);
+	}
 
     cout << "请输入服务器IP地址(默认 127.0.0.1)" << endl;
     getline(cin, serverIP);
@@ -46,12 +50,12 @@ int main()
         cerr << "客户端程序启动失败" << endl;
         return 1;
     }
-    cout << "已连接到聊天服务器,输入消息开始聊天，输入 exit 退出" << endl;
+    cout << "已连接到聊天服务器,输入消息开始聊天，输入 /exit 退出" << endl;
 
     string message;
     while (isrunning) {
         getline(cin, message);
-        if (message == "exit") {
+        if (message == "/exit") {
             break;
         }
 

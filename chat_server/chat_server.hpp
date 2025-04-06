@@ -6,6 +6,7 @@
 #include <string>
 #include <thread>
 #include <mutex>
+#include <unordered_map>
 #include <winsock2.h>   // Windows Socket API (TCP/UDP基础)
 #include <ws2tcpip.h>   // Windows Socket扩展API
 #include <mswsock.h>    // Microsoft-specific扩展
@@ -97,6 +98,7 @@ private:
 	vector<thread> clientThreads;
 	vector<SOCKET> clientSockets;
 	mutex clientsMutex; 
+	unordered_map<SOCKET, string> clientNames; 
 private:
 	bool InitNetwork();          // 初始化
 	SOCKET CreateSocket();          // 创建基础TCP套接字
@@ -104,9 +106,9 @@ private:
 	bool BindSocket();  // 绑定端口
 	bool StartListen();		//监听
 	void AcceptClients();		//接收
-    void HandleClient(SOCKET clientSocket);
-    void RecvMessage(SOCKET clientSocket);
-    void SendMessage(SOCKET clientSocket, const string& message);
+    void HandleClient(SOCKET clientSocket);     //处理命令
+    void RecvMessage(SOCKET clientSocket);      //接受消息
+    void SendMessage(SOCKET clientSocket, const string& message);       //发送消息
 };
 
 #endif

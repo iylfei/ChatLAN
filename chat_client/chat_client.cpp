@@ -37,7 +37,15 @@ bool TcpChatClient::Connect()
         return false;
     }
     isConnected = true;
-    cout << "成功连接到服务器" << "IP:" << serverIP << "Port:" << serverPort << endl;
+    cout << "成功连接到服务器" << "IP:" << serverIP << " Port:" << serverPort << endl;
+
+    //发送用户名到服务器
+	if (send(serverSocket, username.c_str(), username.size(),0) < 0) {
+		cerr << "连接异常，请检查网络状况" << WSAGetLastError() << endl;
+		isConnected = false;
+		return false;
+	}
+    
     return true;
 }
 

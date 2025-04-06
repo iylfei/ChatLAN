@@ -89,8 +89,18 @@ void TcpChatServer::AcceptClients()
 
 void TcpChatServer::HandleClient(SOCKET clientSocket)
 {
-    string message = "已加入聊天";
-    SendMessage(clientSocket, message);
+    //存储客户端名称
+    char clientsName[32];
+	memset(clientsName, 0, sizeof(clientsName));
+	int receivedBytes = recv(clientSocket, clientsName, sizeof(clientsName) - 1, 0);//留一字节给结束符
+    if (receivedBytes > 0) {
+		string clientName(clientsName);
+		{
+			lock_guard<mutex> lock(clientsMutex);
+			clientNames[clientSocket] = clientName;
+		}
+		cout << clientName << " 已加入聊天" << endl;
+	}
 
     RecvMessage(clientSocket);
 }
@@ -104,11 +114,33 @@ void TcpChatServer::RecvMessage(SOCKET clientSocket)
         int receivedBytes = recv(clientSocket, buff, sizeof(buff) - 1, 0);//留一字节给结束符
         if (!isRunning)break;
         if (receivedBytes <= 0) {
+			string exitMessage;
+            string username;
+			{
+				lock_guard<mutex> lock(clientsMutex);
+				auto it = clientNames.find(clientSocket);
+				if (it != clientNames.end()) {
+                    username = it->second;
+					exitMessage = username + " 已退出聊天";
+					clientNames.erase(it);
+				}
+			}
+            BroadcastMessage(exitMessage, clientSocket);
+
             if (receivedBytes == 0) {
-                cout << "客户端断开连接"  << endl;
-            } 
-            else if(WSAGetLastError() != 10053 && WSAGetLastError() != 10054){
-                cerr << "接收消息失败: " << WSAGetLastError() << endl;
+                cout << "客户端 " << username << " 断开连接" << endl;
+            }
+            else {
+                int error = WSAGetLastError();
+                if (error == 10053) {
+                    cout << "客户端 " << username << " 软件导致连接中止" << endl;
+                }
+                else if (error == 10054) {
+                    cout << "客户端 " << username << " 断开连接" << endl;
+                }
+                else {
+                    cerr << "接收消息失败: " << error << endl;
+                }
             }
 
             {
@@ -122,7 +154,7 @@ void TcpChatServer::RecvMessage(SOCKET clientSocket)
             break;
         }
         string message(buff);
-        cout << "收到信息:" << message << endl;
+        cout <<  message << endl;
         BroadcastMessage(message, clientSocket);
     }
 }
