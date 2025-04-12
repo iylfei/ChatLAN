@@ -97,7 +97,7 @@ void TcpChatServer::HandleClient(SOCKET clientSocket)
 		string clientName(clientsName);
 		{
 			lock_guard<mutex> lock(clientsMutex);
-			clientNames[clientSocket] = clientName;
+			clientNames[clientName] = clientSocket;
 		}
 		cout << clientName << " 已加入聊天" << endl;
 	}
@@ -118,11 +118,13 @@ void TcpChatServer::RecvMessage(SOCKET clientSocket)
             string username;
 			{
 				lock_guard<mutex> lock(clientsMutex);
-				auto it = clientNames.find(clientSocket);
-				if (it != clientNames.end()) {
-                    username = it->second;
-					exitMessage = username + " 已退出聊天";
-					clientNames.erase(it);
+				for (const auto& client : clientNames) {
+					if (client.second == clientSocket) {
+						username = client.first;
+						exitMessage = username + " 已退出聊天";
+						clientNames.erase(client.first);
+						break;
+					}
 				}
 			}
             BroadcastMessage(exitMessage, clientSocket);

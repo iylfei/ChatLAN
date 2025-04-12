@@ -89,7 +89,7 @@ public:
     }
 
     void BroadcastMessage(const string& message, SOCKET excludeSocket = INVALID_SOCKET);
-
+    unordered_map<string, SOCKET> clientNames;
 private:
 	int serverPort;
 	SOCKET serverSocket;
@@ -98,7 +98,6 @@ private:
 	vector<thread> clientThreads;
 	vector<SOCKET> clientSockets;
 	mutex clientsMutex; 
-	unordered_map<SOCKET, string> clientNames; 
 private:
 	bool InitNetwork();          // 初始化
 	SOCKET CreateSocket();          // 创建基础TCP套接字

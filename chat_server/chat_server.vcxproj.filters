@@ -29,7 +29,7 @@
     <ClCompile Include="chatMain.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="tcp.cpp">
+    <ClCompile Include="chat_server.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

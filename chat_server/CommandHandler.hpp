@@ -15,9 +15,10 @@ private:
 	bool stopServer();
 	bool help();
 	bool broadcast();
-    
+    bool showClientList();
+	bool directMessage();
     TcpChatServer& server;
-    std::map<std::string, std::function<bool()>> commands;
+    map<std::string, function<bool()>> commands;
 };
 
 #endif // COMMAND_HANDLER_HPP

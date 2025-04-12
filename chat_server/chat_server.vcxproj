@@ -133,7 +133,7 @@
   <ItemGroup>
     <ClCompile Include="chatMain.cpp" />
     <ClCompile Include="CommandHandler.cpp" />
-    <ClCompile Include="tcp.cpp" />
+    <ClCompile Include="chat_server.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
