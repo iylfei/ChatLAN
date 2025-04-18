@@ -7,6 +7,7 @@
 #include <thread>
 #include <mutex>
 #include <signal.h>
+#include "json.hpp"
 #include <winsock2.h>   // Windows Socket API (TCP/UDP»ù´¡)
 #include <ws2tcpip.h>   // Windows SocketÀ©Õ¹API
 #include <mswsock.h>    // Microsoft-specificÀ©Õ¹
@@ -15,6 +16,7 @@
 static const size_t MAX_MESSAGE_SIZE = 4096;
 
 using namespace std;
+using json = nlohmann::json;
 
 class TcpChatClient 
 {
@@ -50,22 +52,25 @@ public:
 
 		WSACleanup();
 	}
-	bool SendMessage(const string& message);
+
+	friend class CommandHandler;
 
 private:
-	bool isConnected;
 	SOCKET serverSocket;
 	string username;
+	bool isConnected;
 	string serverIP;
 	thread recvThread;
 	int serverPort;
+	mutex mtx;
 
 	bool InitNetwork();
 	SOCKET CreateSocket();
 	bool Connect();
 	void RecvMessage();
+	bool SendMessage(const string& message);
+
 };
 
 	
-
 #endif // ! chat_client

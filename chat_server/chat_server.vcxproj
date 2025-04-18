@@ -129,6 +129,7 @@
   <ItemGroup>
     <ClInclude Include="chat_server.hpp" />
     <ClInclude Include="CommandHandler.hpp" />
+    <ClInclude Include="user.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="chatMain.cpp" />

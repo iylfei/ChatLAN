@@ -7,6 +7,8 @@
 #include <thread>
 #include <mutex>
 #include <unordered_map>
+#include "json.hpp"
+#include "user.hpp"
 #include <winsock2.h>   // Windows Socket API (TCP/UDP基础)
 #include <ws2tcpip.h>   // Windows Socket扩展API
 #include <mswsock.h>    // Microsoft-specific扩展
@@ -15,6 +17,7 @@
 static const size_t MAX_MESSAGE_SIZE = 4096;
 
 using namespace std;
+using json = nlohmann::json;
 
 class TcpChatServer
 {
@@ -87,9 +90,8 @@ public:
         cout << "清理Winsock资源..." << endl;
         WSACleanup();
     }
+	friend class CommandHandler;
 
-    void BroadcastMessage(const string& message, SOCKET excludeSocket = INVALID_SOCKET);
-    unordered_map<string, SOCKET> clientNames;
 private:
 	int serverPort;
 	SOCKET serverSocket;
@@ -98,6 +100,8 @@ private:
 	vector<thread> clientThreads;
 	vector<SOCKET> clientSockets;
 	mutex clientsMutex; 
+	unordered_map<string, user> activeUsers;
+
 private:
 	bool InitNetwork();          // 初始化
 	SOCKET CreateSocket();          // 创建基础TCP套接字
@@ -108,6 +112,9 @@ private:
     void HandleClient(SOCKET clientSocket);     //处理命令
     void RecvMessage(SOCKET clientSocket);      //接受消息
     void SendMessage(SOCKET clientSocket, const string& message);       //发送消息
+    void BroadcastMessage(const string& message, SOCKET excludeSocket = INVALID_SOCKET);
+	bool sendUserList(SOCKET clientSocket);
+    bool sendJsonMessage(const json& jsonMsg,SOCKET clientSocket);
 };
 
 #endif

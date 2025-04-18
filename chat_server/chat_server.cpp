@@ -87,23 +87,89 @@ void TcpChatServer::AcceptClients()
     }
 }
 
-void TcpChatServer::HandleClient(SOCKET clientSocket)
-{
-    //存储客户端名称
-    char clientsName[32];
-	memset(clientsName, 0, sizeof(clientsName));
-	int receivedBytes = recv(clientSocket, clientsName, sizeof(clientsName) - 1, 0);//留一字节给结束符
-    if (receivedBytes > 0) {
-		string clientName(clientsName);
-		{
-			lock_guard<mutex> lock(clientsMutex);
-			clientNames[clientName] = clientSocket;
-		}
-		cout << clientName << " 已加入聊天" << endl;
-	}
+void TcpChatServer::HandleClient(SOCKET clientSocket) {
+    bool isLogin = false;
+    while (!isLogin) {
+        try {
+            char buffer[1024];
+            memset(buffer, 0, sizeof(buffer));
+
+            // 接收客户端数据
+            int receivedBytes = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
+            if (receivedBytes <= 0) {
+                if (receivedBytes == 0) {
+                    cout << "客户端主动断开连接" << endl;
+                }
+                else {
+                    cerr << "接收错误: " << WSAGetLastError() << endl;
+                }
+                closesocket(clientSocket);
+                return;
+            }
+
+            // 解析JSON数据
+            json loginData;
+            try {
+                loginData = json::parse(buffer, buffer + receivedBytes);
+            }
+            catch (const json::parse_error& e) {
+                json errorResponse;
+                errorResponse["type"] = "InvalidFormat";
+                errorResponse["message"] = "非法的JSON格式";
+                sendJsonMessage(errorResponse, clientSocket);
+                continue;  
+            }
+
+            // 验证用户名格式
+            if (!loginData.contains("username") ||
+                !loginData["username"].is_string() ||
+                loginData["username"].get<string>().empty()) {
+                json errorResponse;
+                errorResponse["type"] = "InvalidUsername";
+                errorResponse["message"] = "用户名格式错误 (4-16位字母数字)";
+                sendJsonMessage(errorResponse, clientSocket);
+                continue;
+            }
+
+            string username = loginData["username"];
+
+            // 检查用户名重复
+            {
+                lock_guard<mutex> lock(clientsMutex);
+                if (activeUsers.count(username)) {
+                    json errorResponse;
+                    errorResponse["type"] = "UsernameTaken";
+                    errorResponse["message"] = "用户名已被占用，请重新输入";
+                    sendJsonMessage(errorResponse, clientSocket);
+                    continue;  
+                }
+
+                activeUsers.emplace(
+                    std::piecewise_construct,
+                    std::forward_as_tuple(username),
+                    std::forward_as_tuple(username, clientSocket)//直接构建，避免多次拷贝
+                );
+            }
+
+            // 登录成功处理
+            json successResponse;
+            successResponse["type"] = "LoginSuccess";
+            successResponse["username"] = username;
+            sendJsonMessage(successResponse, clientSocket);
+            BroadcastMessage(username + " 进入了聊天室",clientSocket);
+            isLogin = true;  
+
+        }
+        catch (const exception& e) {
+            cerr << "处理客户端异常: " << e.what() << endl;
+            closesocket(clientSocket);
+            return;  
+        }
+    }
 
     RecvMessage(clientSocket);
 }
+
 
 void TcpChatServer::RecvMessage(SOCKET clientSocket)
 {
@@ -178,3 +244,23 @@ void TcpChatServer::BroadcastMessage(const string& message, SOCKET excludeSocket
     }
 }
 
+//发送JSON消息
+bool TcpChatServer::sendJsonMessage(const json& jsonMsg,SOCKET clientSocket)
+{
+    string jsonString = jsonMsg.dump();
+	lock_guard<mutex> lock(clientsMutex);
+	if (send(clientSocket, jsonString.c_str(), jsonString.size(), 0) == SOCKET_ERROR)
+	{
+		cerr << "发送JSON消息失败: " << WSAGetLastError() << endl;
+		return false;
+	}
+    return true;
+}
+
+//发送用户列表
+bool TcpChatServer::sendUserList(SOCKET clientSocket)
+{
+    json userList;
+	userList["type"] = "UserList";
+    
+}

@@ -21,6 +21,9 @@
     <ClInclude Include="chat_server.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="user.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CommandHandler.cpp">

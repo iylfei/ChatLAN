@@ -19,8 +19,32 @@ bool CommandHandler::handleCommand(const std::string& cmd)
 
 bool CommandHandler::showUsersList()
 {
-	std::cout << "在线用户列表:" << std::endl;
+	string message = "getUsers";
+	{
+		lock_guard<mutex> lock(mtx);
+		// 发送获取在线用户列表的请求
+		if (send(client.serverSocket, message.c_str(), message.size(), 0) < 0) {
+			cerr << "获取在线用户列表失败" << WSAGetLastError() << endl;
+			return false;
+		}
+		// 接收在线用户列表
+		char buffer[MAX_MESSAGE_SIZE];
+		memset(buffer, 0, sizeof(buffer));
+		int bytesReceived = recv(client.serverSocket, buffer, sizeof(buffer) - 1, 0);
+		if (bytesReceived <= 0) {
+			cerr << "接收在线用户列表失败" << WSAGetLastError() << endl;
+			return false;
+		}
+		buffer[bytesReceived] = '\0'; // 确保字符串结束
+		string userList(buffer);
+		cout << "在线用户列表:" << endl;
 
-	return false;
+	}
+	return true;
+}
+
+void CommandHandler::handleJsonMessage(const json& jsonMsg)
+{
+	
 }
 
