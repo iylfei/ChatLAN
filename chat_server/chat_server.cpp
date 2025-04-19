@@ -1,87 +1,87 @@
-#include "chat_server.hpp"
+ï»¿#include "chat_server.hpp"
 
-//³õÊ¼»¯ÍøÂç¿â
+//åˆå§‹åŒ–ç½‘ç»œåº“
 bool TcpChatServer::InitNetwork()
 {
 	WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-        cerr << "³õÊ¼»¯WinsockÊ§°Ü" << WSAGetLastError() << endl;
+        cerr << "åˆå§‹åŒ–Winsockå¤±è´¥" << WSAGetLastError() << endl;
         return false;
     }
     return true;
 }
 
-//´´½¨Ì×½Ó×Ö
+//åˆ›å»ºå¥—æ¥å­—
 SOCKET TcpChatServer::CreateSocket()
 {
     SOCKET sock = socket(AF_INET,SOCK_STREAM,0);
     if (sock == INVALID_SOCKET) {
-        cerr << "´´½¨socketÊ§°Ü" << WSAGetLastError() << endl;
+        cerr << "åˆ›å»ºsocketå¤±è´¥" << WSAGetLastError() << endl;
     }
     return sock;
 }
 
-// ÅäÖÃµØÖ·
+// é…ç½®åœ°å€
 void TcpChatServer::ConfigSocketAddress(sockaddr_in& addr, int port) {
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
     addr.sin_addr.s_addr = INADDR_ANY;
 }
 
-// °ó¶¨¶Ë¿Ú
+// ç»‘å®šç«¯å£
 bool TcpChatServer::BindSocket() {
     sockaddr_in server_addr{};
     ConfigSocketAddress(server_addr, serverPort);
 
-    if (bind(serverSocket, (sockaddr*)&server_addr, sizeof(server_addr)) == SOCKET_ERROR) {
-        cerr << "°ó¶¨Ê§°Ü" << WSAGetLastError() << endl;
+    if (::bind(serverSocket, (sockaddr*)&server_addr, sizeof(server_addr)) == SOCKET_ERROR) {
+        cerr << "ç»‘å®šå¤±è´¥" << WSAGetLastError() << endl;
         return false;
     }
     return true;
 }
 
 
-//¿ªÊ¼¼àÌı
+//å¼€å§‹ç›‘å¬
 bool TcpChatServer::StartListen()
 {
     if (listen(serverSocket, SOMAXCONN) == SOCKET_ERROR) {
-        cerr << "¼àÌıÊ§°Ü" << WSAGetLastError() << endl;
+        cerr << "ç›‘å¬å¤±è´¥" << WSAGetLastError() << endl;
         return false;
     }
-    cout << "¼àÌı³É¹¦£¬µÈ´ıÁ¬½Ó..." << endl;
+    cout << "ç›‘å¬æˆåŠŸï¼Œç­‰å¾…è¿æ¥..." << endl;
     return true;
 }
 
-//½ÓÊÕ¿Í»§¶ËÁ¬½Ó
+//æ¥æ”¶å®¢æˆ·ç«¯è¿æ¥
 void TcpChatServer::AcceptClients()
 {
     while (isRunning) {
-        sockaddr_in client_addr{};  // Ê¹ÓÃclient_addrÀ´´æ´¢¿Í»§¶ËµØÖ·
+        sockaddr_in client_addr{};  // ä½¿ç”¨client_addræ¥å­˜å‚¨å®¢æˆ·ç«¯åœ°å€
         int addrlen = sizeof(client_addr);
 
         SOCKET clientSocket = accept(serverSocket,(sockaddr*)&client_addr, &addrlen);
         if (clientSocket == INVALID_SOCKET) {
             if (isRunning) {
-                cerr << "½ÓÊÕÁ¬½ÓÊ§°Ü: " << WSAGetLastError() << endl;
+                cerr << "æ¥æ”¶è¿æ¥å¤±è´¥: " << WSAGetLastError() << endl;
             }
             continue;
         }
 
-        //Êä³öÁ¬½Ó¿Í»§¶ËĞÅÏ¢
-        //´æ´¢×ª»»ºóµÄIPµØÖ·×Ö·û´®
-        char client_ip[INET_ADDRSTRLEN];//INET_ADDRSTRLEN ÊÇÒ»¸öÔ¤¶¨Òå³£Á¿£¬±íÊ¾´æ´¢IPv4µØÖ·×Ö·û´®ËùĞèµÄ×î´ó×Ö·ûÊı
-        //½«¶ş½øÖÆIPµØÖ·×ª»»Îªµã·ÖÊ®½øÖÆ±íÊ¾·¨µÄ×Ö·û´®
+        //è¾“å‡ºè¿æ¥å®¢æˆ·ç«¯ä¿¡æ¯
+        //å­˜å‚¨è½¬æ¢åçš„IPåœ°å€å­—ç¬¦ä¸²
+        char client_ip[INET_ADDRSTRLEN];//INET_ADDRSTRLEN æ˜¯ä¸€ä¸ªé¢„å®šä¹‰å¸¸é‡ï¼Œè¡¨ç¤ºå­˜å‚¨IPv4åœ°å€å­—ç¬¦ä¸²æ‰€éœ€çš„æœ€å¤§å­—ç¬¦æ•°
+        //å°†äºŒè¿›åˆ¶IPåœ°å€è½¬æ¢ä¸ºç‚¹åˆ†åè¿›åˆ¶è¡¨ç¤ºæ³•çš„å­—ç¬¦ä¸²
         inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, sizeof(client_ip));
-        cout << "¿Í»§¶ËÁ¬½Ó³É¹¦£¬IP: " << client_ip << "£¬¶Ë¿Ú: " << ntohs(client_addr.sin_port) << endl;
+        cout << "å®¢æˆ·ç«¯è¿æ¥æˆåŠŸï¼ŒIP: " << client_ip << "ï¼Œç«¯å£: " << ntohs(client_addr.sin_port) << endl;
 
-        //Ìí¼Ó¿Í»§¶ËÁ¬½Óµ½Á¬½ÓÁĞ±í
-        //Ê¹ÓÃ×÷ÓÃÓò{}´´½¨¾Ö²¿×÷ÓÃÓò£¬ÒÔ±ãÔÚÌí¼Óµ½ÁĞ±íÖ®ºóÁ¢¼´Ïú»Ù
+        //æ·»åŠ å®¢æˆ·ç«¯è¿æ¥åˆ°è¿æ¥åˆ—è¡¨
+        //ä½¿ç”¨ä½œç”¨åŸŸ{}åˆ›å»ºå±€éƒ¨ä½œç”¨åŸŸï¼Œä»¥ä¾¿åœ¨æ·»åŠ åˆ°åˆ—è¡¨ä¹‹åç«‹å³é”€æ¯
         {
             lock_guard<mutex> lock(clientsMutex);
             clientSockets.push_back(clientSocket);
         }
 
-        //´´½¨ĞÂ½ø³Ì´¦Àí¿Í»§¶Ë
+        //åˆ›å»ºæ–°è¿›ç¨‹å¤„ç†å®¢æˆ·ç«¯
         thread clientThread(&TcpChatServer::HandleClient, this, clientSocket);
         clientThreads.push_back(move(clientThread));
     }
@@ -94,20 +94,20 @@ void TcpChatServer::HandleClient(SOCKET clientSocket) {
             char buffer[1024];
             memset(buffer, 0, sizeof(buffer));
 
-            // ½ÓÊÕ¿Í»§¶ËÊı¾İ
+            // æ¥æ”¶å®¢æˆ·ç«¯æ•°æ®
             int receivedBytes = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
             if (receivedBytes <= 0) {
                 if (receivedBytes == 0) {
-                    cout << "¿Í»§¶ËÖ÷¶¯¶Ï¿ªÁ¬½Ó" << endl;
+                    cout << "å®¢æˆ·ç«¯ä¸»åŠ¨æ–­å¼€è¿æ¥" << endl;
                 }
                 else {
-                    cerr << "½ÓÊÕ´íÎó: " << WSAGetLastError() << endl;
+                    cerr << "æ¥æ”¶é”™è¯¯: " << WSAGetLastError() << endl;
                 }
                 closesocket(clientSocket);
                 return;
             }
 
-            // ½âÎöJSONÊı¾İ
+            // è§£æJSONæ•°æ®
             json loginData;
             try {
                 loginData = json::parse(buffer, buffer + receivedBytes);
@@ -115,31 +115,31 @@ void TcpChatServer::HandleClient(SOCKET clientSocket) {
             catch (const json::parse_error& e) {
                 json errorResponse;
                 errorResponse["type"] = "InvalidFormat";
-                errorResponse["message"] = "·Ç·¨µÄJSON¸ñÊ½";
+                errorResponse["message"] = "éæ³•çš„JSONæ ¼å¼";
                 sendJsonMessage(errorResponse, clientSocket);
                 continue;  
             }
 
-            // ÑéÖ¤ÓÃ»§Ãû¸ñÊ½
+            // éªŒè¯ç”¨æˆ·åæ ¼å¼
             if (!loginData.contains("username") ||
                 !loginData["username"].is_string() ||
                 loginData["username"].get<string>().empty()) {
                 json errorResponse;
                 errorResponse["type"] = "InvalidUsername";
-                errorResponse["message"] = "ÓÃ»§Ãû¸ñÊ½´íÎó (4-16Î»×ÖÄ¸Êı×Ö)";
+                errorResponse["message"] = "ç”¨æˆ·åæ ¼å¼é”™è¯¯ (3-16ä½å­—æ¯æ•°å­—)";
                 sendJsonMessage(errorResponse, clientSocket);
                 continue;
             }
 
             string username = loginData["username"];
 
-            // ¼ì²éÓÃ»§ÃûÖØ¸´
+            // æ£€æŸ¥ç”¨æˆ·åé‡å¤
             {
                 lock_guard<mutex> lock(clientsMutex);
                 if (activeUsers.count(username)) {
                     json errorResponse;
                     errorResponse["type"] = "UsernameTaken";
-                    errorResponse["message"] = "ÓÃ»§ÃûÒÑ±»Õ¼ÓÃ£¬ÇëÖØĞÂÊäÈë";
+                    errorResponse["message"] = "ç”¨æˆ·åå·²è¢«å ç”¨ï¼Œè¯·é‡æ–°è¾“å…¥";
                     sendJsonMessage(errorResponse, clientSocket);
                     continue;  
                 }
@@ -147,21 +147,20 @@ void TcpChatServer::HandleClient(SOCKET clientSocket) {
                 activeUsers.emplace(
                     std::piecewise_construct,
                     std::forward_as_tuple(username),
-                    std::forward_as_tuple(username, clientSocket)//Ö±½Ó¹¹½¨£¬±ÜÃâ¶à´Î¿½±´
+                    std::forward_as_tuple(username, clientSocket)//ç›´æ¥æ„å»ºï¼Œé¿å…å¤šæ¬¡æ‹·è´
                 );
             }
 
-            // µÇÂ¼³É¹¦´¦Àí
+            // ç™»å½•æˆåŠŸå¤„ç†
             json successResponse;
-            successResponse["type"] = "LoginSuccess";
-            successResponse["username"] = username;
-            sendJsonMessage(successResponse, clientSocket);
-            BroadcastMessage(username + " ½øÈëÁËÁÄÌìÊÒ",clientSocket);
+            successResponse["type"] = "announcement";
+			successResponse["message"] = username + " è¿›å…¥äº†èŠå¤©å®¤";
+            BroadcastMessage(successResponse,clientSocket);
             isLogin = true;  
 
         }
         catch (const exception& e) {
-            cerr << "´¦Àí¿Í»§¶ËÒì³£: " << e.what() << endl;
+            cerr << "å¤„ç†å®¢æˆ·ç«¯å¼‚å¸¸: " << e.what() << endl;
             closesocket(clientSocket);
             return;  
         }
@@ -173,41 +172,42 @@ void TcpChatServer::HandleClient(SOCKET clientSocket) {
 
 void TcpChatServer::RecvMessage(SOCKET clientSocket)
 {
-    char buff[4096];
+    char buff[MAX_MESSAGE_SIZE];
     while (isRunning) {
-        //Çå¿Õ»º³åÇø
+        //æ¸…ç©ºç¼“å†²åŒº
         memset(buff, 0, sizeof(buff));
-        int receivedBytes = recv(clientSocket, buff, sizeof(buff) - 1, 0);//ÁôÒ»×Ö½Ú¸ø½áÊø·û
+        int receivedBytes = recv(clientSocket, buff, sizeof(buff) - 1, 0);//ç•™ä¸€å­—èŠ‚ç»™ç»“æŸç¬¦
         if (!isRunning)break;
         if (receivedBytes <= 0) {
-			string exitMessage;
+            json exitMsg;
             string username;
 			{
 				lock_guard<mutex> lock(clientsMutex);
-				for (const auto& client : clientNames) {
-					if (client.second == clientSocket) {
+				for (const auto& client : activeUsers) {
+					if (client.second.getSocket() == clientSocket) {
 						username = client.first;
-						exitMessage = username + " ÒÑÍË³öÁÄÌì";
-						clientNames.erase(client.first);
+						exitMsg["type"] = "announcement";
+						exitMsg["message"] = username + " å·²é€€å‡ºèŠå¤©";
+						activeUsers.erase(client.first);
 						break;
 					}
 				}
 			}
-            BroadcastMessage(exitMessage, clientSocket);
+            BroadcastMessage(exitMsg, clientSocket);
 
             if (receivedBytes == 0) {
-                cout << "¿Í»§¶Ë " << username << " ¶Ï¿ªÁ¬½Ó" << endl;
+                cout << "å®¢æˆ·ç«¯ " << username << " æ–­å¼€è¿æ¥" << endl;
             }
             else {
                 int error = WSAGetLastError();
                 if (error == 10053) {
-                    cout << "¿Í»§¶Ë " << username << " Èí¼şµ¼ÖÂÁ¬½ÓÖĞÖ¹" << endl;
+                    cout << "å®¢æˆ·ç«¯ " << username << " è½¯ä»¶å¯¼è‡´è¿æ¥ä¸­æ­¢" << endl;
                 }
                 else if (error == 10054) {
-                    cout << "¿Í»§¶Ë " << username << " ¶Ï¿ªÁ¬½Ó" << endl;
+                    cout << "å®¢æˆ·ç«¯ " << username << " æ–­å¼€è¿æ¥" << endl;
                 }
                 else {
-                    cerr << "½ÓÊÕÏûÏ¢Ê§°Ü: " << error << endl;
+                    cerr << "æ¥æ”¶æ¶ˆæ¯å¤±è´¥: " << error << endl;
                 }
             }
 
@@ -221,46 +221,92 @@ void TcpChatServer::RecvMessage(SOCKET clientSocket)
             closesocket(clientSocket);
             break;
         }
-        string message(buff);
-        cout <<  message << endl;
-        BroadcastMessage(message, clientSocket);
-    }
-}
 
-void TcpChatServer::SendMessage(SOCKET clientSocket, const string& message)
-{
-    if (send(clientSocket, message.c_str(), message.size(), 0) == SOCKET_ERROR) {
-        cerr << "·¢ËÍÏûÏ¢Ê§°Ü: " << WSAGetLastError() << endl;
-    }
-}
+		//è§£æJSONæ•°æ®
+        try {
+            json msgData = json::parse(buff, buff + receivedBytes);
 
-void TcpChatServer::BroadcastMessage(const string& message, SOCKET excludeSocket)
-{
-    lock_guard<mutex> lock(clientsMutex);
-    for (const auto& socket : clientSockets) {
-        if (socket != excludeSocket) {
-            SendMessage(socket, message);
+            if (msgData.contains("type")) {
+				//æ£€æŸ¥æ¶ˆæ¯ç±»å‹
+                if (msgData["type"] == "GetUserList") {
+                    sendUserList(clientSocket);
+                    continue;
+                }
+                else if(msgData["type"] == "message") {
+                    cout << buff << endl;
+					BroadcastMessage(msgData, clientSocket);
+                }
+            }
+			else {
+				cerr << "æ— æ•ˆçš„æ¶ˆæ¯æ ¼å¼" << endl;
+				continue;
+			}
+        }
+        catch (const json::parse_error& e) {
+			cerr << "è§£æJSONæ¶ˆæ¯å¤±è´¥: " << e.what() << endl;
+			json errorResponse;
+			errorResponse["type"] = "InvalidFormat";
+			errorResponse["message"] = "éæ³•çš„JSONæ ¼å¼";
+			sendJsonMessage(errorResponse, clientSocket);
+			continue;
         }
     }
 }
 
-//·¢ËÍJSONÏûÏ¢
+void TcpChatServer::BroadcastMessage(const json& message, SOCKET excludeSocket)
+{
+    string jsonMsg = message.dump();
+    size_t msgSize = jsonMsg.size();
+    const char* msgData = jsonMsg.c_str();
+
+    // ä½¿ç”¨å‘é‡ä¿å­˜éœ€è¦ç§»é™¤çš„Socket
+    vector<SOCKET> socketsToRemove;
+
+    {
+        lock_guard<mutex> lock(clientsMutex);
+
+        for (const auto& clientSocket : clientSockets) {
+            if (clientSocket != excludeSocket) {
+                if (send(clientSocket, msgData, static_cast<int>(msgSize), 0) == SOCKET_ERROR) {
+                    cerr << "å¹¿æ’­æ¶ˆæ¯å¤±è´¥: " << WSAGetLastError() << endl;
+                    socketsToRemove.push_back(clientSocket);
+                }
+            }
+        }
+
+        // æ‰¹é‡åˆ é™¤å¤±è´¥çš„è¿æ¥
+        for (const auto& socketToRemove : socketsToRemove) {
+            auto it = find(clientSockets.begin(), clientSockets.end(), socketToRemove);
+            if (it != clientSockets.end()) {
+                clientSockets.erase(it);
+            }
+        }
+    }
+}
+
+
+
+//å‘é€JSONæ¶ˆæ¯
 bool TcpChatServer::sendJsonMessage(const json& jsonMsg,SOCKET clientSocket)
 {
     string jsonString = jsonMsg.dump();
 	lock_guard<mutex> lock(clientsMutex);
-	if (send(clientSocket, jsonString.c_str(), jsonString.size(), 0) == SOCKET_ERROR)
+	if (send(clientSocket, jsonString.c_str(), static_cast<int>(jsonString.size()), 0) == SOCKET_ERROR)
 	{
-		cerr << "·¢ËÍJSONÏûÏ¢Ê§°Ü: " << WSAGetLastError() << endl;
+		cerr << "å‘é€JSONæ¶ˆæ¯å¤±è´¥: " << WSAGetLastError() << endl;
 		return false;
 	}
     return true;
 }
 
-//·¢ËÍÓÃ»§ÁĞ±í
+//å‘é€ç”¨æˆ·åˆ—è¡¨
 bool TcpChatServer::sendUserList(SOCKET clientSocket)
 {
     json userList;
 	userList["type"] = "UserList";
-    
+	for (const auto& user : activeUsers) {
+		userList["users"].push_back(user.first);
+	}
+	sendJsonMessage(userList, clientSocket);
+    return true;
 }

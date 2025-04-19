@@ -1,50 +1,33 @@
-#include "CommandHandler.hpp"
+ï»¿#include "CommandHandler.hpp"
 
 CommandHandler::CommandHandler(TcpChatClient& client) : client(client)
 {
-	commands["/users"] = [this]() { return showUsersList(); };
+commands["/users"] = [this]() { return showUsersList(); };
 }
 
 bool CommandHandler::handleCommand(const std::string& cmd)
 {
-	auto it = commands.find(cmd);
-	if (it != commands.end()) {
-		return it->second();
-	}
-	else {
-		std::cerr << "Î´ÖªÃüÁî: " << cmd << std::endl;
-		return false;
-	}
+auto it = commands.find(cmd);
+if (it != commands.end()) {
+	return it->second();
+}
+else {
+	std::cerr << "æœªçŸ¥å‘½ä»¤: " << cmd << std::endl;
+	return false;
+}
 }
 
 bool CommandHandler::showUsersList()
 {
-	string message = "getUsers";
-	{
-		lock_guard<mutex> lock(mtx);
-		// ·¢ËÍ»ñÈ¡ÔÚÏßÓÃ»§ÁĞ±íµÄÇëÇó
-		if (send(client.serverSocket, message.c_str(), message.size(), 0) < 0) {
-			cerr << "»ñÈ¡ÔÚÏßÓÃ»§ÁĞ±íÊ§°Ü" << WSAGetLastError() << endl;
-			return false;
-		}
-		// ½ÓÊÕÔÚÏßÓÃ»§ÁĞ±í
-		char buffer[MAX_MESSAGE_SIZE];
-		memset(buffer, 0, sizeof(buffer));
-		int bytesReceived = recv(client.serverSocket, buffer, sizeof(buffer) - 1, 0);
-		if (bytesReceived <= 0) {
-			cerr << "½ÓÊÕÔÚÏßÓÃ»§ÁĞ±íÊ§°Ü" << WSAGetLastError() << endl;
-			return false;
-		}
-		buffer[bytesReceived] = '\0'; // È·±£×Ö·û´®½áÊø
-		string userList(buffer);
-		cout << "ÔÚÏßÓÃ»§ÁĞ±í:" << endl;
-
+	lock_guard<mutex> lock(client.mtx); 
+	// å‘é€è·å–åœ¨çº¿ç”¨æˆ·åˆ—è¡¨çš„è¯·æ±‚
+	json messageJson;
+	messageJson["type"] = "GetUserList";
+	string jsonString = messageJson.dump();
+	if (send(client.serverSocket, jsonString.c_str(), jsonString.size(), 0) < 0) {
+		cerr << "è·å–åœ¨çº¿ç”¨æˆ·åˆ—è¡¨å¤±è´¥" << WSAGetLastError() << endl;
+		return false;
 	}
+
 	return true;
 }
-
-void CommandHandler::handleJsonMessage(const json& jsonMsg)
-{
-	
-}
-

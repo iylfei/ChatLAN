@@ -1,4 +1,4 @@
-#ifndef CHAT_CLIENT_HPP
+ï»¿#ifndef CHAT_CLIENT_HPP
 #define CHAT_CLIENT_HPP
 
 #include <iostream>
@@ -6,12 +6,13 @@
 #include <string>
 #include <thread>
 #include <mutex>
+#include <regex>
 #include <signal.h>
 #include "json.hpp"
-#include <winsock2.h>   // Windows Socket API (TCP/UDP»ù´¡)
-#include <ws2tcpip.h>   // Windows SocketÀ©Õ¹API
-#include <mswsock.h>    // Microsoft-specificÀ©Õ¹
-#pragma comment(lib, "ws2_32.lib")  // Á´½ÓWinSock¿â
+#include <winsock2.h>   // Windows Socket API (TCP/UDPåŸºç¡€)
+#include <ws2tcpip.h>   // Windows Socketæ‰©å±•API
+#include <mswsock.h>    // Microsoft-specificæ‰©å±•
+#pragma comment(lib, "ws2_32.lib")  // é“¾æŽ¥WinSockåº“
 
 static const size_t MAX_MESSAGE_SIZE = 4096;
 
@@ -21,8 +22,8 @@ using json = nlohmann::json;
 class TcpChatClient 
 {
 public:
-	TcpChatClient(const string& username, const string& serverIP, int serverPort) :
-		username(username), serverIP(serverIP), serverPort(serverPort),isConnected(false){}
+	TcpChatClient(const string& serverIP, int serverPort) :
+		serverIP(serverIP), serverPort(serverPort),isConnected(false){}
 
 	~TcpChatClient() {
 		stop();
@@ -52,7 +53,7 @@ public:
 
 		WSACleanup();
 	}
-
+	bool SendChatMessage(const string& message);
 	friend class CommandHandler;
 
 private:
@@ -68,7 +69,6 @@ private:
 	SOCKET CreateSocket();
 	bool Connect();
 	void RecvMessage();
-	bool SendMessage(const string& message);
 
 };
 

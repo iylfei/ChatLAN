@@ -1,4 +1,4 @@
-#include "CommandHandler.hpp"
+ï»¿#include "CommandHandler.hpp"
 #include "chat_server.hpp"
 
 CommandHandler::CommandHandler(TcpChatServer& server) : server(server)
@@ -18,7 +18,7 @@ bool CommandHandler::handleCommand(const std::string& cmd)
 		return it->second();
 	}
 	else {
-		cout << "ÃüÁî²»´æÔÚ" << endl;
+		cout << "å‘½ä»¤ä¸å­˜åœ¨" << endl;
 	}
 	return true;
 }
@@ -31,12 +31,12 @@ bool CommandHandler::stopServer()
 
 bool CommandHandler::help()
 {
-	cout << "ÃüÁî" << endl;
+	cout << "å‘½ä»¤" << endl;
 	cout << "-----------------------------" << endl;
-	cout << "/stop£º¹Ø±Õ·þÎñÆ÷" << endl;
-	cout << "/dm£ºÏò¿Í»§¶Ë·¢ÆðË½ÁÄ" << endl;
-	cout << "/bc£º¹ã²¥Ò»ÌõÏûÏ¢¸øËùÓÐ¿Í»§¶Ë" << endl;
-	cout << "/cl£ºÏÔÊ¾ÁÄÌìÊÒµ±Ç°ÔÚÏßÁÐ±í" << endl;
+	cout << "/stopï¼šå…³é—­æœåŠ¡å™¨" << endl;
+	cout << "/dmï¼šå‘å®¢æˆ·ç«¯å‘èµ·ç§èŠ" << endl;
+	cout << "/bcï¼šå¹¿æ’­ä¸€æ¡æ¶ˆæ¯ç»™æ‰€æœ‰å®¢æˆ·ç«¯" << endl;
+	cout << "/clï¼šæ˜¾ç¤ºèŠå¤©å®¤å½“å‰åœ¨çº¿åˆ—è¡¨" << endl;
 	cout << "-----------------------------" << endl;
 	cout << endl;
 	return true;
@@ -46,9 +46,9 @@ bool CommandHandler::help()
 bool CommandHandler::broadcast()
 {
 	string message;
-	cout << "ÇëÊäÈëÒª¹ã²¥µÄÏûÏ¢£º" << endl;
+	cout << "è¯·è¾“å…¥è¦å¹¿æ’­çš„æ¶ˆæ¯ï¼š" << endl;
 	getline(cin, message);
-	string fullMessage = "·þÎñÆ÷: " + message;
+	string fullMessage = "æœåŠ¡å™¨: " + message;
 	server.BroadcastMessage(fullMessage);
 	cout << fullMessage << endl;
 	return true;
@@ -57,43 +57,42 @@ bool CommandHandler::broadcast()
 bool CommandHandler::showClientList()
 {
 	int count = 1;
-	if (server.clientNames.empty()) {
-		cout << "µ±Ç°Ã»ÓÐÔÚÏßÓÃ»§" << endl;
+	if (server.activeUsers.empty()) {
+		cout << "å½“å‰æ²¡æœ‰åœ¨çº¿ç”¨æˆ·" << endl;
 		return true;
 	}
-	for (const auto& client : server.clientNames) {
+	for (const auto& client : server.activeUsers) {
 		cout << count << ". " << client.first << endl;
 		count++;
 	}
 	return true;
 }
 
-//·þÎñÆ÷Ë½ÁÄ
+//æœåŠ¡å™¨ç§èŠ
 bool CommandHandler::directMessage()
 {
 	string clientName;
-	cout << "ÇëÊäÈëÒªË½ÁÄµÄÓÃ»§Ãû£º" << endl;
+	cout << "è¯·è¾“å…¥è¦ç§èŠçš„ç”¨æˆ·åï¼š" << endl;
 	getline(cin, clientName);
-	if (server.clientNames.find(clientName) == server.clientNames.end()) {
-		cout << "ÓÃ»§²»´æÔÚ" << endl;
+	if (server.activeUsers.find(clientName) == server.activeUsers.end()) {
+		cout << "ç”¨æˆ·ä¸å­˜åœ¨" << endl;
 		return false;
 	}
 	else {
 		string message;
-		cout << "ÇëÊäÈëÒª·¢ËÍµÄÏûÏ¢£º" << endl;
-		cout << "ÊäÈë /stopdm ½áÊøË½ÁÄ" << endl;
+		cout << "è¯·è¾“å…¥è¦å‘é€çš„æ¶ˆæ¯ï¼š" << endl;
+		cout << "è¾“å…¥ /stopdm ç»“æŸç§èŠ" << endl;
 		while (true) {
 			getline(cin, message);
 			if (message == "/stopdm") {
 				break;
 			}
-			string fullMessage = "·þÎñÆ÷(Ë½ÁÄ): " + message;
-			SOCKET clientSocket = server.clientNames[clientName];
-			if (send(clientSocket, fullMessage.c_str(), fullMessage.size(), 0) == SOCKET_ERROR)
-			{
-				cerr << "·¢ËÍÏûÏ¢Ê§°Ü: " << WSAGetLastError() << endl;
-				return false;
-			}
+			string fullMessage = "æœåŠ¡å™¨(ç§èŠ): " + message;
+			SOCKET clientSocket = server.activeUsers[clientName].getSocket();
+			json dmMsg;
+			dmMsg["type"] = "dm";
+			dmMsg["message"] = fullMessage;
+			server.sendJsonMessage(dmMsg, clientSocket);
 		}
 	}
 	return true;

@@ -1,4 +1,4 @@
-#ifndef COMMAND_HANDLER_HPP
+﻿#ifndef COMMAND_HANDLER_HPP
 #define COMMAND_HANDLER_HPP
 
 #include "chat_client.hpp"
@@ -12,7 +12,6 @@ public:
 
 private:
     bool showUsersList();
-    void handleJsonMessage(const json& jsonMsg);
     TcpChatClient& client;
     map<std::string, function<bool()>> commands;
 };

@@ -1,4 +1,4 @@
-#ifndef COMMAND_HANDLER_HPP
+﻿#ifndef COMMAND_HANDLER_HPP
 #define COMMAND_HANDLER_HPP
 
 #include "chat_server.hpp"

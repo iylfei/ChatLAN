@@ -1,4 +1,4 @@
-#ifndef CHAT_SERVER_HPP
+ï»¿#ifndef CHAT_SERVER_HPP
 #define CHAT_SERVER_HPP
 
 #include <iostream>
@@ -9,10 +9,10 @@
 #include <unordered_map>
 #include "json.hpp"
 #include "user.hpp"
-#include <winsock2.h>   // Windows Socket API (TCP/UDP»ù´¡)
-#include <ws2tcpip.h>   // Windows SocketÀ©Õ¹API
-#include <mswsock.h>    // Microsoft-specificÀ©Õ¹
-#pragma comment(lib, "ws2_32.lib")  // Á´½ÓWinSock¿â
+#include <winsock2.h>   // Windows Socket API (TCP/UDPåŸºç¡€)
+#include <ws2tcpip.h>   // Windows Socketæ‰©å±•API
+#include <mswsock.h>    // Microsoft-specificæ‰©å±•
+#pragma comment(lib, "ws2_32.lib")  // é“¾æ¥WinSockåº“
 
 static const size_t MAX_MESSAGE_SIZE = 4096;
 
@@ -46,7 +46,7 @@ public:
 
         isRunning = true;
 
-        // ´´½¨½ÓÊÜÁ¬½ÓµÄÏß³Ì
+        // åˆ›å»ºæ¥å—è¿æ¥çš„çº¿ç¨‹
         acceptThread = thread(&TcpChatServer::AcceptClients, this);
 
         return true;
@@ -56,22 +56,22 @@ public:
         static bool isstopped = false;
         if (isstopped)return;
         isstopped = true;
-        cout << "ÕıÔÚÍ£Ö¹·şÎñÆ÷..." << endl;
+        cout << "æ­£åœ¨åœæ­¢æœåŠ¡å™¨..." << endl;
         isRunning = false;
 
         if (serverSocket != INVALID_SOCKET) {
-            cout << "¹Ø±Õ·şÎñÆ÷socket..." << endl;
+            cout << "å…³é—­æœåŠ¡å™¨socket..." << endl;
             closesocket(serverSocket);
             serverSocket = INVALID_SOCKET;
         }
 
-        cout << "µÈ´ıacceptÏß³ÌÍË³ö..." << endl;
+        cout << "ç­‰å¾…acceptçº¿ç¨‹é€€å‡º..." << endl;
         if (acceptThread.joinable()) {
             acceptThread.detach();
         }
 
         {
-            cout << "¹Ø±ÕËùÓĞ¿Í»§¶ËÁ¬½Ó..." << endl;
+            cout << "å…³é—­æ‰€æœ‰å®¢æˆ·ç«¯è¿æ¥..." << endl;
             lock_guard<mutex> lock(clientsMutex);
             for (auto& sock : clientSockets) {
                 closesocket(sock);
@@ -79,7 +79,7 @@ public:
             clientSockets.clear();
         }
 
-        cout << "µÈ´ı¿Í»§¶ËÏß³ÌÍË³ö..." << endl;
+        cout << "ç­‰å¾…å®¢æˆ·ç«¯çº¿ç¨‹é€€å‡º..." << endl;
         for (auto& t : clientThreads) {
             if (t.joinable()) {
                 t.detach();
@@ -87,7 +87,7 @@ public:
         }
         clientThreads.clear();
 
-        cout << "ÇåÀíWinsock×ÊÔ´..." << endl;
+        cout << "æ¸…ç†Winsockèµ„æº..." << endl;
         WSACleanup();
     }
 	friend class CommandHandler;
@@ -103,16 +103,15 @@ private:
 	unordered_map<string, user> activeUsers;
 
 private:
-	bool InitNetwork();          // ³õÊ¼»¯
-	SOCKET CreateSocket();          // ´´½¨»ù´¡TCPÌ×½Ó×Ö
-    void ConfigSocketAddress(sockaddr_in& addr, int port);//ÅäÖÃµØÖ·
-	bool BindSocket();  // °ó¶¨¶Ë¿Ú
-	bool StartListen();		//¼àÌı
-	void AcceptClients();		//½ÓÊÕ
-    void HandleClient(SOCKET clientSocket);     //´¦ÀíÃüÁî
-    void RecvMessage(SOCKET clientSocket);      //½ÓÊÜÏûÏ¢
-    void SendMessage(SOCKET clientSocket, const string& message);       //·¢ËÍÏûÏ¢
-    void BroadcastMessage(const string& message, SOCKET excludeSocket = INVALID_SOCKET);
+	bool InitNetwork();          // åˆå§‹åŒ–
+	SOCKET CreateSocket();          // åˆ›å»ºåŸºç¡€TCPå¥—æ¥å­—
+    void ConfigSocketAddress(sockaddr_in& addr, int port);//é…ç½®åœ°å€
+	bool BindSocket();  // ç»‘å®šç«¯å£
+	bool StartListen();		//ç›‘å¬
+	void AcceptClients();		//æ¥æ”¶
+    void HandleClient(SOCKET clientSocket);     //å¤„ç†å‘½ä»¤
+    void RecvMessage(SOCKET clientSocket);      //æ¥å—æ¶ˆæ¯
+    void BroadcastMessage(const json& message, SOCKET excludeSocket = INVALID_SOCKET);
 	bool sendUserList(SOCKET clientSocket);
     bool sendJsonMessage(const json& jsonMsg,SOCKET clientSocket);
 };

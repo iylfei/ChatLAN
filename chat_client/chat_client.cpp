@@ -1,10 +1,10 @@
-#include "chat_client.hpp"
+ï»¿#include "chat_client.hpp"
 
 bool TcpChatClient::InitNetwork()
 {
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-        cerr << "³õÊ¼»¯Ê§°Ü" << WSAGetLastError() << endl;
+        cerr << "åˆå§‹åŒ–å¤±è´¥" << WSAGetLastError() << endl;
         return false;
     }
     return true;
@@ -14,7 +14,7 @@ SOCKET TcpChatClient::CreateSocket()
 {
     SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock == INVALID_SOCKET) {
-        cerr << "´´½¨socketÊ§°Ü" << WSAGetLastError() << endl;
+        cerr << "åˆ›å»ºsocketå¤±è´¥" << WSAGetLastError() << endl;
     }
     return sock;
 }
@@ -28,33 +28,46 @@ bool TcpChatClient::Connect()
     addr.sin_port = htons(serverPort);
     
     if (inet_pton(AF_INET, serverIP.c_str(), &addr.sin_addr) <= 0) {
-        std::cerr << "ÎÞÐ§µÄIPµØÖ·" << std::endl;
+        std::cerr << "æ— æ•ˆçš„IPåœ°å€" << std::endl;
         return false;
     }
 
     if (connect(serverSocket, (struct sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR) {
-        cerr << "Á¬½Ó·þÎñÆ÷Ê§°Ü" << WSAGetLastError() << endl;
+        cerr << "è¿žæŽ¥æœåŠ¡å™¨å¤±è´¥" << WSAGetLastError() << endl;
         return false;
     }
     isConnected = true;
-    cout << "³É¹¦Á¬½Óµ½·þÎñÆ÷" << "IP:" << serverIP << " Port:" << serverPort << endl;
+    cout << "æˆåŠŸè¿žæŽ¥åˆ°æœåŠ¡å™¨" << "IP:" << serverIP << " Port:" << serverPort << endl;
 
-    //·¢ËÍÓÃ»§Ãûµ½·þÎñÆ÷
-	if (send(serverSocket, username.c_str(), username.size(),0) < 0) {
-		cerr << "Á¬½ÓÒì³££¬Çë¼ì²éÍøÂç×´¿ö" << WSAGetLastError() << endl;
-		isConnected = false;
-		return false;
-	}
-    
+    while (username.empty()) {
+        cout << "è¯·è¾“å…¥ç”¨æˆ·å: ";
+        getline(cin, username);
+
+        // ä½¿ç”¨æ­£åˆ™è¡¨è¾¾å¼éªŒè¯ç”¨æˆ·å
+        regex usernamePattern("^[a-zA-Z0-9_]{3,16}$");
+
+        if (!regex_match(username, usernamePattern)) {
+            cout << "ç”¨æˆ·åæ— æ•ˆï¼è¦æ±‚ï¼š3-16ä¸ªå­—ç¬¦ï¼Œåªèƒ½åŒ…å«å­—æ¯å’Œæ•°å­—" << endl;
+            username.clear();
+        }
+    }
+    // å‘é€ç™»å½•ä¿¡æ¯
+    json loginMsg;
+    loginMsg["username"] = username;
+    string sendData = loginMsg.dump();
+    send(serverSocket, sendData.c_str(), static_cast<int>(sendData.size()), 0);
     return true;
 }
 
-bool TcpChatClient::SendMessage(const string& message)
+bool TcpChatClient::SendChatMessage(const string& message)
 {
-    string fullMessage = username + ": " + message;
-    if (send(serverSocket, fullMessage.c_str(), fullMessage.size(), 0) == SOCKET_ERROR) {
+	json messageJson;
+	messageJson["type"] = "message";
+    messageJson["message"] = username + ":" + message;
+	string jsonMsg = messageJson.dump();
+    if (send(serverSocket, jsonMsg.c_str(), static_cast<int>(jsonMsg.size()), 0) == SOCKET_ERROR) {
         if (WSAGetLastError() != 10054) {
-            cerr << "·¢ËÍÏûÏ¢Ê§°Ü" << WSAGetLastError() << endl;
+            cerr << "å‘é€æ¶ˆæ¯å¤±è´¥" << WSAGetLastError() << endl;
         }
         isConnected = false;
         return false;
@@ -71,25 +84,46 @@ void TcpChatClient::RecvMessage()
         if (!isConnected)break;
         if (receivedBytes > 0) {
             if (receivedBytes > MAX_MESSAGE_SIZE) {
-                cerr << "½ÓÊÕÏûÏ¢³¤¶È³¬¹ýÉÏÏÞ" << endl;
+                cerr << "æŽ¥æ”¶æ¶ˆæ¯é•¿åº¦è¶…è¿‡ä¸Šé™" << endl;
                 continue;
             }
-            cout << buff << endl;
+            try {
+				json msgData = json::parse(buff, buff + receivedBytes);
+				if (msgData.contains("type")) {
+					if (msgData["type"] == "UserList") {
+						cout << "åœ¨çº¿ç”¨æˆ·åˆ—è¡¨:" << endl;
+						for (const auto& user : msgData["users"]) {
+							cout << user.get<string>() << endl;
+						}
+					}
+					else if (msgData["type"] == "announcement" || msgData["type"] == "dm") {
+						cout << msgData["message"].get<string>() << endl;
+					}
+					else if (msgData["type"] == "InvalidFormat" || msgData["type"] == "InvalidUsername") {
+						cerr << "æœåŠ¡å™¨è¿”å›žé”™è¯¯: " << msgData["message"].get<string>() << endl;
+					}
+                    else {
+                        cerr << "æœªçŸ¥æ¶ˆæ¯ç±»åž‹" << endl;
+                    }
+				}
+			}
+            catch (const json::parse_error& e) {
+                cerr << "è§£æžJSONæ¶ˆæ¯å¤±è´¥: " << e.what() << endl;
+                continue;
+            }
         }
         else {
             if (receivedBytes == 0) {
-                cout << "·þÎñÆ÷¹Ø±ÕÁËÁ¬½Ó" << endl;
+                cout << "æœåŠ¡å™¨å…³é—­äº†è¿žæŽ¥" << endl;
             }
             else if (WSAGetLastError() == 10054) {
-                cout << "·þÎñÆ÷ÒÑ¹Ø±Õ" << endl;
+                cout << "æœåŠ¡å™¨å·²å…³é—­" << endl;
             }
             else  {
-                cerr << "ÏûÏ¢½ÓÊÜ´íÎó" << WSAGetLastError() << endl;
+                cerr << "æ¶ˆæ¯æŽ¥æ”¶é”™è¯¯" << WSAGetLastError() << endl;
             }
             break;
         }
     }
     isConnected = false;
 }
-
-

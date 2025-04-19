@@ -9,19 +9,8 @@ void signalHandler(int signal) {
 int main()
 {
     signal(SIGINT, signalHandler);//Ctrl+C可以结束
-    string username = "默认名称";
     string serverIP;
     int serverPort;
-
-    cout << "请输入用户名：" << endl;
-    getline(cin, username);
-	if (username.empty()) {
-		username = "默认名称";
-	}
-	else if (username.size() > 15) {
-		cout << "用户名过长，请重新输入" << endl;
-        getline(cin, username);
-	}
 
     cout << "请输入服务器IP地址(默认 127.0.0.1)" << endl;
     getline(cin, serverIP);
@@ -44,7 +33,7 @@ int main()
             serverPort = 8888;
         }
     }
-    TcpChatClient client(username, serverIP, serverPort);
+    TcpChatClient client(serverIP, serverPort);
 
     if (!client.start()) {
         cerr << "客户端程序启动失败" << endl;
@@ -64,7 +53,7 @@ int main()
                 cout << "消息过长!" << endl;
                 continue;
             }
-            if (!client.SendMessage(message)) {
+            if (!client.SendChatMessage(message)) {
                 cerr << "发送消息失败" << endl;
                 break;
             }
