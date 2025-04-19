@@ -1,10 +1,10 @@
-﻿#include "chat_client.hpp"
+#include "chat_client.hpp"
 
 bool TcpChatClient::InitNetwork()
 {
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-        cerr << "初始化失败" << WSAGetLastError() << endl;
+        cerr << "Init failed: " << WSAGetLastError() << endl;
         return false;
     }
     return true;
@@ -14,7 +14,7 @@ SOCKET TcpChatClient::CreateSocket()
 {
     SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock == INVALID_SOCKET) {
-        cerr << "创建socket失败" << WSAGetLastError() << endl;
+        cerr << "Create socket failed: " << WSAGetLastError() << endl;
     }
     return sock;
 }
@@ -26,32 +26,32 @@ bool TcpChatClient::Connect()
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_port = htons(serverPort);
-    
+
     if (inet_pton(AF_INET, serverIP.c_str(), &addr.sin_addr) <= 0) {
-        std::cerr << "无效的IP地址" << std::endl;
+        std::cerr << "Invalid IP address" << std::endl;
         return false;
     }
 
     if (connect(serverSocket, (struct sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR) {
-        cerr << "连接服务器失败" << WSAGetLastError() << endl;
+        cerr << "Connect to server failed: " << WSAGetLastError() << endl;
         return false;
     }
     isConnected = true;
-    cout << "成功连接到服务器" << "IP:" << serverIP << " Port:" << serverPort << endl;
+    cout << "Successfully connected to server " << "IP:" << serverIP << " Port:" << serverPort << endl;
 
     while (username.empty()) {
-        cout << "请输入用户名: ";
+        cout << "Please enter username: ";
         getline(cin, username);
 
-        // 使用正则表达式验证用户名
+        // Using regex to validate username
         regex usernamePattern("^[a-zA-Z0-9_]{3,16}$");
 
         if (!regex_match(username, usernamePattern)) {
-            cout << "用户名无效！要求：3-16个字符，只能包含字母和数字" << endl;
+            cout << "Invalid username! Requirements: 3-16 characters, only letters and numbers" << endl;
             username.clear();
         }
     }
-    // 发送登录信息
+    // Send login information
     json loginMsg;
     loginMsg["username"] = username;
     string sendData = loginMsg.dump();
@@ -61,13 +61,13 @@ bool TcpChatClient::Connect()
 
 bool TcpChatClient::SendChatMessage(const string& message)
 {
-	json messageJson;
-	messageJson["type"] = "message";
+    json messageJson;
+    messageJson["type"] = "message";
     messageJson["message"] = username + ":" + message;
-	string jsonMsg = messageJson.dump();
+    string jsonMsg = messageJson.dump();
     if (send(serverSocket, jsonMsg.c_str(), static_cast<int>(jsonMsg.size()), 0) == SOCKET_ERROR) {
         if (WSAGetLastError() != 10054) {
-            cerr << "发送消息失败" << WSAGetLastError() << endl;
+            cerr << "Send message failed: " << WSAGetLastError() << endl;
         }
         isConnected = false;
         return false;
@@ -81,46 +81,46 @@ void TcpChatClient::RecvMessage()
     while (isConnected) {
         memset(buff, 0, sizeof(buff));
         int receivedBytes = recv(serverSocket, buff, sizeof(buff) - 1, 0);
-        if (!isConnected)break;
+        if (!isConnected) break;
         if (receivedBytes > 0) {
             if (receivedBytes > MAX_MESSAGE_SIZE) {
-                cerr << "接收消息长度超过上限" << endl;
+                cerr << "Message length exceeds limit" << endl;
                 continue;
             }
             try {
-				json msgData = json::parse(buff, buff + receivedBytes);
-				if (msgData.contains("type")) {
-					if (msgData["type"] == "UserList") {
-						cout << "在线用户列表:" << endl;
-						for (const auto& user : msgData["users"]) {
-							cout << user.get<string>() << endl;
-						}
-					}
-					else if (msgData["type"] == "announcement" || msgData["type"] == "dm") {
-						cout << msgData["message"].get<string>() << endl;
-					}
-					else if (msgData["type"] == "InvalidFormat" || msgData["type"] == "InvalidUsername") {
-						cerr << "服务器返回错误: " << msgData["message"].get<string>() << endl;
-					}
-                    else {
-                        cerr << "未知消息类型" << endl;
+                json msgData = json::parse(buff, buff + receivedBytes);
+                if (msgData.contains("type")) {
+                    if (msgData["type"] == "UserList") {
+                        cout << "Online users:" << endl;
+                        for (const auto& user : msgData["users"]) {
+                            cout << user.get<string>() << endl;
+                        }
                     }
-				}
-			}
+                    else if (msgData["type"] == "announcement" || msgData["type"] == "dm") {
+                        cout << msgData["message"].get<string>() << endl;
+                    }
+                    else if (msgData["type"] == "InvalidFormat" || msgData["type"] == "InvalidUsername") {
+                        cerr << "Server error: " << msgData["message"].get<string>() << endl;
+                    }
+                    else {
+                        cerr << "Unknown message type" << endl;
+                    }
+                }
+            }
             catch (const json::parse_error& e) {
-                cerr << "解析JSON消息失败: " << e.what() << endl;
+                cerr << "JSON parsing failed: " << e.what() << endl;
                 continue;
             }
         }
         else {
             if (receivedBytes == 0) {
-                cout << "服务器关闭了连接" << endl;
+                cout << "Server closed the connection" << endl;
             }
             else if (WSAGetLastError() == 10054) {
-                cout << "服务器已关闭" << endl;
+                cout << "Server has been closed" << endl;
             }
-            else  {
-                cerr << "消息接收错误" << WSAGetLastError() << endl;
+            else {
+                cerr << "Message receiving error: " << WSAGetLastError() << endl;
             }
             break;
         }

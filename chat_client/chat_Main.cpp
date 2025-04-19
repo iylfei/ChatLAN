@@ -1,24 +1,27 @@
-﻿#include "chat_client.hpp"
+#include "chat_client.hpp"
 
 atomic<bool> isrunning(true);
 
 void signalHandler(int signal) {
-    cout << "接收到退出信号，正在关闭客户端..." << endl;
+    cout << "Received exit signal, closing client..." << endl;
     isrunning = false;
 }
 int main()
 {
-    signal(SIGINT, signalHandler);//Ctrl+C可以结束
+    #ifdef _WIN32
+        SetConsoleOutputCP(CP_UTF8);
+    #endif
+    signal(SIGINT, signalHandler); // Ctrl+C to terminate
     string serverIP;
     int serverPort;
 
-    cout << "请输入服务器IP地址(默认 127.0.0.1)" << endl;
+    cout << "Please enter server IP (default 127.0.0.1):" << endl;
     getline(cin, serverIP);
     if (serverIP.empty()) {
         serverIP = "127.0.0.1";
     }
 
-    cout << "请输入服务器端口 (默认 8888): ";
+    cout << "Please enter server port (default 8888): ";
     string portStr;
     getline(cin, portStr);
     if (portStr.empty()) {
@@ -29,17 +32,17 @@ int main()
             serverPort = stoi(portStr);
         }
         catch (...) {
-            cerr << "无效的端口号，使用默认端口 8888" << endl;
+            cerr << "Invalid port number, using default port 8888" << endl;
             serverPort = 8888;
         }
     }
     TcpChatClient client(serverIP, serverPort);
 
     if (!client.start()) {
-        cerr << "客户端程序启动失败" << endl;
+        cerr << "Client startup failed" << endl;
         return 1;
     }
-    cout << "已连接到聊天服务器,输入消息开始聊天，输入 /exit 退出" << endl;
+    cout << "Connected to chat server, type messages to chat, type /exit to quit" << endl;
 
     string message;
     while (isrunning) {
@@ -50,18 +53,17 @@ int main()
 
         if (!message.empty()) {
             if (message.size() > MAX_MESSAGE_SIZE) {
-                cout << "消息过长!" << endl;
+                cout << "Message too long!" << endl;
                 continue;
             }
             if (!client.SendChatMessage(message)) {
-                cerr << "发送消息失败" << endl;
+                cerr << "Failed to send message" << endl;
                 break;
             }
         }
     }
 
     client.stop();
-    cout << "客户端已关闭" << endl;
+    cout << "Client has been closed" << endl;
     return 0;
 }
-

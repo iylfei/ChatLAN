@@ -18,7 +18,7 @@ bool CommandHandler::handleCommand(const std::string& cmd)
 		return it->second();
 	}
 	else {
-		cout << "命令不存在" << endl;
+		cout << "Command does not exist" << endl;
 	}
 	return true;
 }
@@ -31,12 +31,12 @@ bool CommandHandler::stopServer()
 
 bool CommandHandler::help()
 {
-	cout << "命令" << endl;
+	cout << "Commands" << endl;
 	cout << "-----------------------------" << endl;
-	cout << "/stop：关闭服务器" << endl;
-	cout << "/dm：向客户端发起私聊" << endl;
-	cout << "/bc：广播一条消息给所有客户端" << endl;
-	cout << "/cl：显示聊天室当前在线列表" << endl;
+	cout << "/stop: Shutdown server" << endl;
+	cout << "/dm: Send private message to a client" << endl;
+	cout << "/bc: Broadcast a message to all clients" << endl;
+	cout << "/cl: Show current online users in chat room" << endl;
 	cout << "-----------------------------" << endl;
 	cout << endl;
 	return true;
@@ -46,9 +46,9 @@ bool CommandHandler::help()
 bool CommandHandler::broadcast()
 {
 	string message;
-	cout << "请输入要广播的消息：" << endl;
+	cout << "Please enter the message to broadcast:" << endl;
 	getline(cin, message);
-	string fullMessage = "服务器: " + message;
+	string fullMessage = "Server: " + message;
 	server.BroadcastMessage(fullMessage);
 	cout << fullMessage << endl;
 	return true;
@@ -58,7 +58,7 @@ bool CommandHandler::showClientList()
 {
 	int count = 1;
 	if (server.activeUsers.empty()) {
-		cout << "当前没有在线用户" << endl;
+		cout << "No users currently online" << endl;
 		return true;
 	}
 	for (const auto& client : server.activeUsers) {
@@ -68,26 +68,26 @@ bool CommandHandler::showClientList()
 	return true;
 }
 
-//服务器私聊
+// Server private messaging
 bool CommandHandler::directMessage()
 {
 	string clientName;
-	cout << "请输入要私聊的用户名：" << endl;
+	cout << "Please enter the username to direct message:" << endl;
 	getline(cin, clientName);
 	if (server.activeUsers.find(clientName) == server.activeUsers.end()) {
-		cout << "用户不存在" << endl;
+		cout << "User does not exist" << endl;
 		return false;
 	}
 	else {
 		string message;
-		cout << "请输入要发送的消息：" << endl;
-		cout << "输入 /stopdm 结束私聊" << endl;
+		cout << "Please enter the message to send:" << endl;
+		cout << "Enter /stopdm to end private messaging" << endl;
 		while (true) {
 			getline(cin, message);
 			if (message == "/stopdm") {
 				break;
 			}
-			string fullMessage = "服务器(私聊): " + message;
+			string fullMessage = "Server(Private): " + message;
 			SOCKET clientSocket = server.activeUsers[clientName].getSocket();
 			json dmMsg;
 			dmMsg["type"] = "dm";

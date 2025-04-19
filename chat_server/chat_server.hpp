@@ -9,10 +9,10 @@
 #include <unordered_map>
 #include "json.hpp"
 #include "user.hpp"
-#include <winsock2.h>   // Windows Socket API (TCP/UDP基础)
-#include <ws2tcpip.h>   // Windows Socket扩展API
-#include <mswsock.h>    // Microsoft-specific扩展
-#pragma comment(lib, "ws2_32.lib")  // 链接WinSock库
+#include <winsock2.h>   // Windows Socket API (TCP/UDP basics)
+#include <ws2tcpip.h>   // Windows Socket extended API
+#include <mswsock.h>    // Microsoft-specific extensions
+#pragma comment(lib, "ws2_32.lib")  // Link WinSock library
 
 static const size_t MAX_MESSAGE_SIZE = 4096;
 
@@ -22,11 +22,11 @@ using json = nlohmann::json;
 class TcpChatServer
 {
 public:
-	TcpChatServer(int port) : serverPort(port), serverSocket(INVALID_SOCKET), isRunning(false) {}
+    TcpChatServer(int port) : serverPort(port), serverSocket(INVALID_SOCKET), isRunning(false) {}
 
-	~TcpChatServer() {
-		stop();
-	}
+    ~TcpChatServer() {
+        stop();
+    }
 
     bool start() {
         if (!InitNetwork()) return false;
@@ -46,7 +46,7 @@ public:
 
         isRunning = true;
 
-        // 创建接受连接的线程
+        // Create thread to accept connections
         acceptThread = thread(&TcpChatServer::AcceptClients, this);
 
         return true;
@@ -54,24 +54,24 @@ public:
 
     void stop() {
         static bool isstopped = false;
-        if (isstopped)return;
+        if (isstopped) return;
         isstopped = true;
-        cout << "正在停止服务器..." << endl;
+        cout << "Stopping server..." << endl;
         isRunning = false;
 
         if (serverSocket != INVALID_SOCKET) {
-            cout << "关闭服务器socket..." << endl;
+            cout << "Closing server socket..." << endl;
             closesocket(serverSocket);
             serverSocket = INVALID_SOCKET;
         }
 
-        cout << "等待accept线程退出..." << endl;
+        cout << "Waiting for accept thread to exit..." << endl;
         if (acceptThread.joinable()) {
             acceptThread.detach();
         }
 
         {
-            cout << "关闭所有客户端连接..." << endl;
+            cout << "Closing all client connections..." << endl;
             lock_guard<mutex> lock(clientsMutex);
             for (auto& sock : clientSockets) {
                 closesocket(sock);
@@ -79,7 +79,7 @@ public:
             clientSockets.clear();
         }
 
-        cout << "等待客户端线程退出..." << endl;
+        cout << "Waiting for client threads to exit..." << endl;
         for (auto& t : clientThreads) {
             if (t.joinable()) {
                 t.detach();
@@ -87,33 +87,33 @@ public:
         }
         clientThreads.clear();
 
-        cout << "清理Winsock资源..." << endl;
+        cout << "Cleaning up Winsock resources..." << endl;
         WSACleanup();
     }
-	friend class CommandHandler;
+    friend class CommandHandler;
 
 private:
-	int serverPort;
-	SOCKET serverSocket;
-	atomic<bool> isRunning;
+    int serverPort;
+    SOCKET serverSocket;
+    atomic<bool> isRunning;
     thread acceptThread;
-	vector<thread> clientThreads;
-	vector<SOCKET> clientSockets;
-	mutex clientsMutex; 
-	unordered_map<string, user> activeUsers;
+    vector<thread> clientThreads;
+    vector<SOCKET> clientSockets;
+    mutex clientsMutex;
+    unordered_map<string, user> activeUsers;
 
 private:
-	bool InitNetwork();          // 初始化
-	SOCKET CreateSocket();          // 创建基础TCP套接字
-    void ConfigSocketAddress(sockaddr_in& addr, int port);//配置地址
-	bool BindSocket();  // 绑定端口
-	bool StartListen();		//监听
-	void AcceptClients();		//接收
-    void HandleClient(SOCKET clientSocket);     //处理命令
-    void RecvMessage(SOCKET clientSocket);      //接受消息
+    bool InitNetwork();          // Initialize
+    SOCKET CreateSocket();       // Create basic TCP socket
+    void ConfigSocketAddress(sockaddr_in& addr, int port); // Configure address
+    bool BindSocket();           // Bind port
+    bool StartListen();          // Listen
+    void AcceptClients();        // Accept
+    void HandleClient(SOCKET clientSocket);     // Handle commands
+    void RecvMessage(SOCKET clientSocket);      // Receive messages
     void BroadcastMessage(const json& message, SOCKET excludeSocket = INVALID_SOCKET);
-	bool sendUserList(SOCKET clientSocket);
-    bool sendJsonMessage(const json& jsonMsg,SOCKET clientSocket);
+    bool sendUserList(SOCKET clientSocket);
+    bool sendJsonMessage(const json& jsonMsg, SOCKET clientSocket);
 };
 
 #endif

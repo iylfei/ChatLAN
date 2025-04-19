@@ -1,87 +1,86 @@
-﻿#include "chat_server.hpp"
+#include "chat_server.hpp"
 
-//初始化网络库
+// Initialize network library
 bool TcpChatServer::InitNetwork()
 {
-	WSADATA wsaData;
+    WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-        cerr << "初始化Winsock失败" << WSAGetLastError() << endl;
+        cerr << "Winsock initialization failed: " << WSAGetLastError() << endl;
         return false;
     }
     return true;
 }
 
-//创建套接字
+// Create socket
 SOCKET TcpChatServer::CreateSocket()
 {
-    SOCKET sock = socket(AF_INET,SOCK_STREAM,0);
+    SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock == INVALID_SOCKET) {
-        cerr << "创建socket失败" << WSAGetLastError() << endl;
+        cerr << "Socket creation failed: " << WSAGetLastError() << endl;
     }
     return sock;
 }
 
-// 配置地址
+// Configure address
 void TcpChatServer::ConfigSocketAddress(sockaddr_in& addr, int port) {
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
     addr.sin_addr.s_addr = INADDR_ANY;
 }
 
-// 绑定端口
+// Bind port
 bool TcpChatServer::BindSocket() {
     sockaddr_in server_addr{};
     ConfigSocketAddress(server_addr, serverPort);
 
     if (::bind(serverSocket, (sockaddr*)&server_addr, sizeof(server_addr)) == SOCKET_ERROR) {
-        cerr << "绑定失败" << WSAGetLastError() << endl;
+        cerr << "Binding failed: " << WSAGetLastError() << endl;
         return false;
     }
     return true;
 }
 
-
-//开始监听
+// Start listening
 bool TcpChatServer::StartListen()
 {
     if (listen(serverSocket, SOMAXCONN) == SOCKET_ERROR) {
-        cerr << "监听失败" << WSAGetLastError() << endl;
+        cerr << "Listening failed: " << WSAGetLastError() << endl;
         return false;
     }
-    cout << "监听成功，等待连接..." << endl;
+    cout << "Listening successfully, waiting for connections..." << endl;
     return true;
 }
 
-//接收客户端连接
+// Accept client connections
 void TcpChatServer::AcceptClients()
 {
     while (isRunning) {
-        sockaddr_in client_addr{};  // 使用client_addr来存储客户端地址
+        sockaddr_in client_addr{};  // Use client_addr to store client address
         int addrlen = sizeof(client_addr);
 
-        SOCKET clientSocket = accept(serverSocket,(sockaddr*)&client_addr, &addrlen);
+        SOCKET clientSocket = accept(serverSocket, (sockaddr*)&client_addr, &addrlen);
         if (clientSocket == INVALID_SOCKET) {
             if (isRunning) {
-                cerr << "接收连接失败: " << WSAGetLastError() << endl;
+                cerr << "Connection acceptance failed: " << WSAGetLastError() << endl;
             }
             continue;
         }
 
-        //输出连接客户端信息
-        //存储转换后的IP地址字符串
-        char client_ip[INET_ADDRSTRLEN];//INET_ADDRSTRLEN 是一个预定义常量，表示存储IPv4地址字符串所需的最大字符数
-        //将二进制IP地址转换为点分十进制表示法的字符串
+        // Output connected client information
+        // Store converted IP address string
+        char client_ip[INET_ADDRSTRLEN]; // INET_ADDRSTRLEN is a predefined constant, indicating the maximum characters needed to store IPv4 address string
+        // Convert binary IP address to dotted decimal notation string
         inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, sizeof(client_ip));
-        cout << "客户端连接成功，IP: " << client_ip << "，端口: " << ntohs(client_addr.sin_port) << endl;
+        cout << "Client connected successfully, IP: " << client_ip << ", Port: " << ntohs(client_addr.sin_port) << endl;
 
-        //添加客户端连接到连接列表
-        //使用作用域{}创建局部作用域，以便在添加到列表之后立即销毁
+        // Add client connection to connection list
+        // Use scope {} to create local scope, to destroy immediately after adding to the list
         {
             lock_guard<mutex> lock(clientsMutex);
             clientSockets.push_back(clientSocket);
         }
 
-        //创建新进程处理客户端
+        // Create new process to handle client
         thread clientThread(&TcpChatServer::HandleClient, this, clientSocket);
         clientThreads.push_back(move(clientThread));
     }
@@ -94,20 +93,20 @@ void TcpChatServer::HandleClient(SOCKET clientSocket) {
             char buffer[1024];
             memset(buffer, 0, sizeof(buffer));
 
-            // 接收客户端数据
+            // Receive client data
             int receivedBytes = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
             if (receivedBytes <= 0) {
                 if (receivedBytes == 0) {
-                    cout << "客户端主动断开连接" << endl;
+                    cout << "Client actively disconnected" << endl;
                 }
                 else {
-                    cerr << "接收错误: " << WSAGetLastError() << endl;
+                    cerr << "Receiving error: " << WSAGetLastError() << endl;
                 }
                 closesocket(clientSocket);
                 return;
             }
 
-            // 解析JSON数据
+            // Parse JSON data
             json loginData;
             try {
                 loginData = json::parse(buffer, buffer + receivedBytes);
@@ -115,99 +114,98 @@ void TcpChatServer::HandleClient(SOCKET clientSocket) {
             catch (const json::parse_error& e) {
                 json errorResponse;
                 errorResponse["type"] = "InvalidFormat";
-                errorResponse["message"] = "非法的JSON格式";
+                errorResponse["message"] = "Invalid JSON format";
                 sendJsonMessage(errorResponse, clientSocket);
-                continue;  
+                continue;
             }
 
-            // 验证用户名格式
+            // Validate username format
             if (!loginData.contains("username") ||
                 !loginData["username"].is_string() ||
                 loginData["username"].get<string>().empty()) {
                 json errorResponse;
                 errorResponse["type"] = "InvalidUsername";
-                errorResponse["message"] = "用户名格式错误 (3-16位字母数字)";
+                errorResponse["message"] = "Username format error (3-16 alphanumeric characters)";
                 sendJsonMessage(errorResponse, clientSocket);
                 continue;
             }
 
             string username = loginData["username"];
 
-            // 检查用户名重复
+            // Check for duplicate username
             {
                 lock_guard<mutex> lock(clientsMutex);
                 if (activeUsers.count(username)) {
                     json errorResponse;
                     errorResponse["type"] = "UsernameTaken";
-                    errorResponse["message"] = "用户名已被占用，请重新输入";
+                    errorResponse["message"] = "Username already taken, please try another";
                     sendJsonMessage(errorResponse, clientSocket);
-                    continue;  
+                    continue;
                 }
 
                 activeUsers.emplace(
                     std::piecewise_construct,
                     std::forward_as_tuple(username),
-                    std::forward_as_tuple(username, clientSocket)//直接构建，避免多次拷贝
+                    std::forward_as_tuple(username, clientSocket) // Direct construction, avoiding multiple copies
                 );
             }
 
-            // 登录成功处理
+            // Login success handling
             json successResponse;
             successResponse["type"] = "announcement";
-			successResponse["message"] = username + " 进入了聊天室";
-            BroadcastMessage(successResponse,clientSocket);
-            isLogin = true;  
+            successResponse["message"] = username + " has entered the chat room";
+            BroadcastMessage(successResponse, clientSocket);
+            isLogin = true;
 
         }
         catch (const exception& e) {
-            cerr << "处理客户端异常: " << e.what() << endl;
+            cerr << "Client handling exception: " << e.what() << endl;
             closesocket(clientSocket);
-            return;  
+            return;
         }
     }
 
     RecvMessage(clientSocket);
 }
 
-
 void TcpChatServer::RecvMessage(SOCKET clientSocket)
 {
     char buff[MAX_MESSAGE_SIZE];
     while (isRunning) {
-        //清空缓冲区
+        // Clear buffer
         memset(buff, 0, sizeof(buff));
-        int receivedBytes = recv(clientSocket, buff, sizeof(buff) - 1, 0);//留一字节给结束符
-        if (!isRunning)break;
+        int receivedBytes = recv(clientSocket, buff, sizeof(buff) - 1, 0); // Leave one byte for null terminator
+        if (!isRunning) break;
         if (receivedBytes <= 0) {
             json exitMsg;
             string username;
-			{
-				lock_guard<mutex> lock(clientsMutex);
-				for (const auto& client : activeUsers) {
-					if (client.second.getSocket() == clientSocket) {
-						username = client.first;
-						exitMsg["type"] = "announcement";
-						exitMsg["message"] = username + " 已退出聊天";
-						activeUsers.erase(client.first);
-						break;
-					}
-				}
-			}
+            {
+                lock_guard<mutex> lock(clientsMutex);
+                for (const auto& client : activeUsers) {
+                    if (client.second.getSocket() == clientSocket) {
+                        username = client.first;
+                        exitMsg["type"] = "announcement";
+                        exitMsg["message"] = username + " has left the chat";
+                        activeUsers.erase(client.first);
+                        break;
+                    }
+                }
+            }
             BroadcastMessage(exitMsg, clientSocket);
 
             if (receivedBytes == 0) {
-                cout << "客户端 " << username << " 断开连接" << endl;
+                cout << "Client " << username << " disconnected" << endl;
             }
             else {
                 int error = WSAGetLastError();
                 if (error == 10053) {
-                    cout << "客户端 " << username << " 软件导致连接中止" << endl;
+                    cout << "Client " << username << " software caused connection abort" << endl;
                 }
                 else if (error == 10054) {
-                    cout << "客户端 " << username << " 断开连接" << endl;
+                    cout << "Client " << username << " disconnected" << endl;
                 }
                 else {
-                    cerr << "接收消息失败: " << error << endl;
+                    cerr << "Message receiving failed: " << error << endl;
                 }
             }
 
@@ -222,33 +220,33 @@ void TcpChatServer::RecvMessage(SOCKET clientSocket)
             break;
         }
 
-		//解析JSON数据
+        // Parse JSON data
         try {
             json msgData = json::parse(buff, buff + receivedBytes);
 
             if (msgData.contains("type")) {
-				//检查消息类型
+                // Check message type
                 if (msgData["type"] == "GetUserList") {
                     sendUserList(clientSocket);
                     continue;
                 }
-                else if(msgData["type"] == "message") {
+                else if (msgData["type"] == "message") {
                     cout << buff << endl;
-					BroadcastMessage(msgData, clientSocket);
+                    BroadcastMessage(msgData, clientSocket);
                 }
             }
-			else {
-				cerr << "无效的消息格式" << endl;
-				continue;
-			}
+            else {
+                cerr << "Invalid message format" << endl;
+                continue;
+            }
         }
         catch (const json::parse_error& e) {
-			cerr << "解析JSON消息失败: " << e.what() << endl;
-			json errorResponse;
-			errorResponse["type"] = "InvalidFormat";
-			errorResponse["message"] = "非法的JSON格式";
-			sendJsonMessage(errorResponse, clientSocket);
-			continue;
+            cerr << "JSON parsing failed: " << e.what() << endl;
+            json errorResponse;
+            errorResponse["type"] = "InvalidFormat";
+            errorResponse["message"] = "Invalid JSON format";
+            sendJsonMessage(errorResponse, clientSocket);
+            continue;
         }
     }
 }
@@ -259,7 +257,7 @@ void TcpChatServer::BroadcastMessage(const json& message, SOCKET excludeSocket)
     size_t msgSize = jsonMsg.size();
     const char* msgData = jsonMsg.c_str();
 
-    // 使用向量保存需要移除的Socket
+    // Use vector to store sockets to remove
     vector<SOCKET> socketsToRemove;
 
     {
@@ -268,13 +266,13 @@ void TcpChatServer::BroadcastMessage(const json& message, SOCKET excludeSocket)
         for (const auto& clientSocket : clientSockets) {
             if (clientSocket != excludeSocket) {
                 if (send(clientSocket, msgData, static_cast<int>(msgSize), 0) == SOCKET_ERROR) {
-                    cerr << "广播消息失败: " << WSAGetLastError() << endl;
+                    cerr << "Broadcasting message failed: " << WSAGetLastError() << endl;
                     socketsToRemove.push_back(clientSocket);
                 }
             }
         }
 
-        // 批量删除失败的连接
+        // Batch delete failed connections
         for (const auto& socketToRemove : socketsToRemove) {
             auto it = find(clientSockets.begin(), clientSockets.end(), socketToRemove);
             if (it != clientSockets.end()) {
@@ -284,29 +282,27 @@ void TcpChatServer::BroadcastMessage(const json& message, SOCKET excludeSocket)
     }
 }
 
-
-
-//发送JSON消息
-bool TcpChatServer::sendJsonMessage(const json& jsonMsg,SOCKET clientSocket)
+// Send JSON message
+bool TcpChatServer::sendJsonMessage(const json& jsonMsg, SOCKET clientSocket)
 {
     string jsonString = jsonMsg.dump();
-	lock_guard<mutex> lock(clientsMutex);
-	if (send(clientSocket, jsonString.c_str(), static_cast<int>(jsonString.size()), 0) == SOCKET_ERROR)
-	{
-		cerr << "发送JSON消息失败: " << WSAGetLastError() << endl;
-		return false;
-	}
+    lock_guard<mutex> lock(clientsMutex);
+    if (send(clientSocket, jsonString.c_str(), static_cast<int>(jsonString.size()), 0) == SOCKET_ERROR)
+    {
+        cerr << "JSON message sending failed: " << WSAGetLastError() << endl;
+        return false;
+    }
     return true;
 }
 
-//发送用户列表
+// Send user list
 bool TcpChatServer::sendUserList(SOCKET clientSocket)
 {
     json userList;
-	userList["type"] = "UserList";
-	for (const auto& user : activeUsers) {
-		userList["users"].push_back(user.first);
-	}
-	sendJsonMessage(userList, clientSocket);
+    userList["type"] = "UserList";
+    for (const auto& user : activeUsers) {
+        userList["users"].push_back(user.first);
+    }
+    sendJsonMessage(userList, clientSocket);
     return true;
 }

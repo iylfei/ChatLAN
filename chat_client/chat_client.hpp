@@ -9,21 +9,22 @@
 #include <regex>
 #include <signal.h>
 #include "json.hpp"
-#include <winsock2.h>   // Windows Socket API (TCP/UDP基础)
-#include <ws2tcpip.h>   // Windows Socket扩展API
-#include <mswsock.h>    // Microsoft-specific扩展
-#pragma comment(lib, "ws2_32.lib")  // 链接WinSock库
+#include <winsock2.h>   // Windows Socket API (TCP/UDP basics)
+#include <ws2tcpip.h>   // Windows Socket extension API
+#include <mswsock.h>    // Microsoft-specific extensions
+#pragma comment(lib, "ws2_32.lib")  // Link WinSock library
 
 static const size_t MAX_MESSAGE_SIZE = 4096;
 
 using namespace std;
 using json = nlohmann::json;
 
-class TcpChatClient 
+class TcpChatClient
 {
 public:
 	TcpChatClient(const string& serverIP, int serverPort) :
-		serverIP(serverIP), serverPort(serverPort),isConnected(false){}
+		serverIP(serverIP), serverPort(serverPort), isConnected(false) {
+	}
 
 	~TcpChatClient() {
 		stop();
@@ -33,7 +34,7 @@ public:
 		if (!InitNetwork())return false;
 		serverSocket = CreateSocket();
 		if (serverSocket == SOCKET_ERROR)return false;
-		if(!Connect())return false;
+		if (!Connect())return false;
 
 		recvThread = thread(&TcpChatClient::RecvMessage, this);
 
@@ -72,5 +73,5 @@ private:
 
 };
 
-	
+
 #endif // ! chat_client
