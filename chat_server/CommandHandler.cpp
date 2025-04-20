@@ -49,7 +49,10 @@ bool CommandHandler::broadcast()
 	cout << "请输入要广播的消息：" << endl;
 	getline(cin, message);
 	string fullMessage = "服务器: " + message;
-	server.BroadcastMessage(fullMessage);
+	json broadcastMsg;
+	broadcastMsg["type"] = "announcement";
+	broadcastMsg["message"] = fullMessage;
+	server.BroadcastMessage(broadcastMsg);
 	cout << fullMessage << endl;
 	return true;
 }
